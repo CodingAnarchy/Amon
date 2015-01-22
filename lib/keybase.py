@@ -18,7 +18,8 @@ def get_salt(user):
     r = requests.get(gs_url, params={'email_or_username': user})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to get salt from keybase returned error: " + str(data["status"]["name"]))
+        raise Exception("Attempt to get salt error: " + str(data["status"]["name"]) + '\nDescription: ' +
+                        str(data["status"]["desc"]))
     result = {"salt": data["salt"], "session": data["login_session"]}
     return result
 
@@ -31,7 +32,8 @@ def login(user, pw, salt, session):
     r = requests.post(login_url, params={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(), 'login_session': session})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to login to keybase returned error: " + str(data["status"]["name"]))
+        raise Exception("Login attempt error: " + str(data["status"]["name"]) + '\nDescription: ' +
+                        str(data["status"]["desc"]))
     return data
 
 
@@ -51,7 +53,8 @@ def user_lookup(ltype, users, fields):
     r = requests.get(ul_url, params={ltype: users, 'fields': fields})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to lookup users from keybase returned error: " + str(data["status"]["name"]))
+        raise Exception("Attempt to lookup users error: " + str(data["status"]["name"]) + '\nDescription: ' +
+                        str(data["status"]["desc"]))
     return data
 
 
