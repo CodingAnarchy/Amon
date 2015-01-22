@@ -7,6 +7,7 @@ from base64 import b64decode
 import requests
 import scrypt
 from lib.utils import comma_sep_list
+import gnupg
 
 
 kb_url = 'https://keybase.io/_/api/1.0/'
@@ -36,7 +37,7 @@ def login(user, pw, salt, session):
 def user_lookup(ltype, users, fields):
     ul_url = kb_url + 'user/lookup.json'
 
-    # Verify type is a valid lookup
+    # Verify type is valid lookup: github, twitter, and reddit (at least) may not work due to API-side issue - 1/22/2015
     if ltype not in ['usernames', 'domain', 'twitter', 'github', 'reddit', 'hackernews', 'coinbase', 'key_fingerprint']:
         raise Exception("User lookup attempted with invalid type of lookup.")
     elif len(users) > 1 and not ltype == 'usernames':
@@ -52,3 +53,11 @@ def user_lookup(ltype, users, fields):
     if data["status"]["code"] != 0:
         raise Exception("Attempt to lookup users from keybase returned error code: " + str(data["status"]["code"]))
     return data
+
+
+def user_pub_key(user):
+    uk_url = 'https://keybase.io/' + user + '/key.asc'
+    r = requests.get(uk_url)
+    if r.text == "404":
+        raise Exception("User's public key could not be found on keybase.")
+    return r.text
