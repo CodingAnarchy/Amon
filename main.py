@@ -43,7 +43,7 @@ session = login_reply['session']
 # enc = json_priv_key['body']['priv']['data']
 # print ts.decrypt(enc)
 
-keys = keybase.key_fetch(me['public_keys']['primary']['kid'], ['encrypt'])
+keys = keybase.key_fetch(me['public_keys']['primary']['kid'], ['sign'], session)
 print keys
 # import_result = gpg.import_keys(user_priv_key)
 # pprint(import_result.results)

@@ -34,6 +34,7 @@ def login(user, pw, salt, session):
     if data["status"]["code"] != 0:
         raise Exception("Login attempt error: " + str(data["status"]["name"]) + '\nDescription: ' +
                         str(data["status"]["desc"]))
+    print "Logged in!"
     return data
 
 
@@ -87,7 +88,7 @@ def key_fetch(key_ids, ops=None, session=None):
         if 'decrypt' in ops or 'sign' in ops:
             if session is None:
                 raise Exception("Retrieving private key for encrypting or signing requires login session.")
-            r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt, 'login_session': session})
+            r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt, 'session': session})
         else:
             r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt})
 
