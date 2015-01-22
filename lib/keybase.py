@@ -7,7 +7,7 @@ from base64 import b64decode
 import requests
 import scrypt
 from lib.utils import comma_sep_list
-import gnupg
+# import gnupg
 
 
 kb_url = 'https://keybase.io/_/api/1.0/'
@@ -47,7 +47,6 @@ def user_lookup(ltype, users, fields):
     users = comma_sep_list(users)
     fields = comma_sep_list(fields)
 
-    print ltype
     r = requests.get(ul_url, params={ltype: users, 'fields': fields})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
@@ -61,3 +60,6 @@ def user_pub_key(user):
     if r.text == "404":
         raise Exception("User's public key could not be found on keybase.")
     return r.text
+
+def key_fetch(key_ids, ops=None, ):
+    kf_url = kb_url + 'key/fetch.json'
