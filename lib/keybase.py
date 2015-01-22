@@ -33,14 +33,21 @@ def login(user, pw, salt, session):
     return data
 
 
-def user_lookup(users, fields):
+def user_lookup(ltype, users, fields):
     ul_url = kb_url + 'user/lookup.json'
+
+    # Verify type is a valid lookup
+    if ltype not in ['usernames', 'domain', 'twitter', 'github', 'reddit', 'hackernews', 'coinbase', 'key_fingerprint']:
+        raise Exception("User lookup attempted with invalid type of lookup.")
+    elif len(users) > 1 and not ltype == 'usernames':
+        raise Exception('Only username lookups can be multi-valued.')
 
     # Verify user and fields lists are in an appropriate type and format
     users = comma_sep_list(users)
     fields = comma_sep_list(fields)
 
-    r = requests.get(ul_url, params={'usernames': users, 'fields': fields})
+    print ltype
+    r = requests.get(ul_url, params={ltype: users, 'fields': fields})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
         raise Exception("Attempt to lookup users from keybase returned error code: " + str(data["status"]["code"]))
