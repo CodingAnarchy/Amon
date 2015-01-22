@@ -7,6 +7,10 @@ import msgpack
 from base64 import b64decode, b64encode
 from binascii import hexlify, unhexlify
 
+# clean GPG test directory before proceeding with test
+system('rm -rf /home/testgpguser/gpghome')
+gpg = gnupg.GPG(gnupghome='/home/testgpguser/gpghome')
+
 # Test code for use with user lookup
 # lookup = 'temp'
 # users = []
@@ -24,8 +28,6 @@ from binascii import hexlify, unhexlify
 # print pub_key
 
 # Log in and import private key of logged in user
-system('rm -rf /home/testgpguser/gpghome')  # clean GPG test directory before proceeding with test
-gpg = gnupg.GPG(gnupghome='/home/testgpguser/gpghome')
 user = raw_input("Username: ")
 salt = keybase.get_salt(user)
 
@@ -34,14 +36,6 @@ ts = triplesec.TripleSec(key=pw)
 login_reply = keybase.login(user, pw, salt["salt"], salt["session"])
 me = login_reply['me']
 session = login_reply['session']
-
-# user_priv_key = me['private_keys']['primary']['bundle']
-# json_priv_key = msgpack.unpackb(b64decode(user_priv_key))
-# pprint(json_priv_key)
-# print '\n'
-#
-# enc = json_priv_key['body']['priv']['data']
-# print ts.decrypt(enc)
 
 keys = keybase.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
 enc = msgpack.unpackb(b64decode(keys[0]['bundle']))
