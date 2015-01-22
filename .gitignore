@@ -1,0 +1,4 @@
+# Compiled Source Files #
+*.pyc
+
+.idea

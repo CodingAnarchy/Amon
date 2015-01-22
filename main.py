@@ -1,5 +1,16 @@
 from lib import keybase
 
+lookup = 'temp'
+users = []
+fields = 'basics'
+while lookup != '':
+    lookup = raw_input("User to look up: ")
+    users.append(lookup)
+
+status = keybase.user_lookup(users, fields)
+
+print status
+
 user = raw_input("Username: ")
 salt = keybase.get_salt(user)
 

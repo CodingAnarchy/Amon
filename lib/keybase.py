@@ -4,9 +4,9 @@ from binascii import unhexlify
 import hmac
 from hashlib import sha512
 from base64 import b64decode
-
 import requests
 import scrypt
+from lib.utils import comma_sep_list
 
 
 kb_url = 'https://keybase.io/_/api/1.0/'
@@ -33,5 +33,15 @@ def login(user, pw, salt, session):
     return data
 
 
-def user_lookup(users):
-    ul_url = kb.url + 'user/lookup.json'
+def user_lookup(users, fields):
+    ul_url = kb_url + 'user/lookup.json'
+
+    # Verify user and fields lists are in an appropriate type and format
+    users = comma_sep_list(users)
+    fields = comma_sep_list(fields)
+
+    r = requests.get(ul_url, params={'usernames': users, 'fields': fields})
+    data = json.loads(r.text)
+    if data["status"]["code"] != 0:
+        raise Exception("Attempt to lookup users from keybase returned error code: " + str(data["status"]["code"]))
+    return data
