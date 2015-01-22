@@ -33,14 +33,18 @@ pw = raw_input("Password: ")
 ts = triplesec.TripleSec(key=pw)
 login_reply = keybase.login(user, pw, salt["salt"], salt["session"])
 me = login_reply['me']
+session = login_reply['session']
 
-user_priv_key = me['private_keys']['primary']['bundle']
-json_priv_key = msgpack.unpackb(b64decode(user_priv_key))
-pprint(json_priv_key)
-print '\n'
+# user_priv_key = me['private_keys']['primary']['bundle']
+# json_priv_key = msgpack.unpackb(b64decode(user_priv_key))
+# pprint(json_priv_key)
+# print '\n'
+#
+# enc = json_priv_key['body']['priv']['data']
+# print ts.decrypt(enc)
 
-enc = json_priv_key['body']['priv']['data']
-print ts.decrypt(enc)
+keys = keybase.key_fetch(me['public_keys']['primary']['kid'], ['encrypt'])
+print keys
 # import_result = gpg.import_keys(user_priv_key)
 # pprint(import_result.results)
 
