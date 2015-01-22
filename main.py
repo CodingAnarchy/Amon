@@ -4,7 +4,7 @@ from os import system
 from pprint import pprint
 import triplesec
 import msgpack
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from binascii import hexlify, unhexlify
 
 # Test code for use with user lookup
@@ -43,9 +43,11 @@ session = login_reply['session']
 # enc = json_priv_key['body']['priv']['data']
 # print ts.decrypt(enc)
 
-keys = keybase.key_fetch(me['public_keys']['primary']['kid'], ['sign'], session)
-print keys
-# import_result = gpg.import_keys(user_priv_key)
-# pprint(import_result.results)
+keys = keybase.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
+enc = msgpack.unpackb(b64decode(keys[0]['bundle']))
+enc = enc['body']['priv']['data']
+priv_key = ts.decrypt(enc)
+import_result = gpg.import_keys(priv_key)
+pprint(import_result.results)
 
 
