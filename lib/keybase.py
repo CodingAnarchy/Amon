@@ -3,11 +3,11 @@ import json
 from binascii import unhexlify
 import hmac
 from hashlib import sha512
+import msgpack
 from base64 import b64decode
 import requests
 import scrypt
 from lib.utils import comma_sep_list
-# import gnupg
 
 
 kb_url = 'https://keybase.io/_/api/1.0/'
@@ -97,3 +97,10 @@ def key_fetch(key_ids, ops=None, session=None):
         raise Exception("Attempt to fetch keys error: " + str(data["status"]["name"]) + '\nDescription: ' +
                         str(data["status"]["desc"]))
     return data['keys']
+
+
+def decode_priv_key(obj, ts):
+    enc = msgpack.unpackb(b64decode(obj))
+    enc = enc['body']['priv']['data']
+    priv_key = ts.decrypt(enc)
+    return priv_key

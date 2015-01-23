@@ -1,15 +1,7 @@
-from lib import keybase
-import gnupg
-from os import system
+from lib import keybase, gpg
 from pprint import pprint
 import triplesec
-import msgpack
-from base64 import b64decode, b64encode
-from binascii import hexlify, unhexlify
 
-# clean GPG test directory before proceeding with test
-system('rm -rf /home/testgpguser/gpghome')
-gpg = gnupg.GPG(gnupghome='/home/testgpguser/gpghome')
 
 # Test code for use with user lookup
 # lookup = 'temp'
@@ -38,10 +30,13 @@ me = login_reply['me']
 session = login_reply['session']
 
 keys = keybase.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
-enc = msgpack.unpackb(b64decode(keys[0]['bundle']))
-enc = enc['body']['priv']['data']
-priv_key = ts.decrypt(enc)
+priv_key = keybase.decode_priv_key(keys[0]['bundle'], ts)
 import_result = gpg.import_keys(priv_key)
 pprint(import_result.results)
+
+gpg.export_keys(import_result.results[0]['fingerprint'])
+
+enc = gpg.encrypt_msg('A simple test', user)
+print enc
 
 
