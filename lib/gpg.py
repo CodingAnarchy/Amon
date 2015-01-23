@@ -22,8 +22,13 @@ def import_keys(keys):
 
 def export_keys(keys):
     aa_public_keys = gpg.export_keys(keys)
-    print aa_public_keys
-    return
+    return aa_public_keys
+
+
+def list_keys(secret=False):
+    if not isinstance(secret, bool):
+        raise Exception("list_keys 'secret' parameter must be a boolean")
+    return gpg.list_keys()
 
 
 def encrypt_msg(msg, to):
@@ -31,14 +36,18 @@ def encrypt_msg(msg, to):
         # TODO: Encrypt file path
         return None
     else:
-        # treat msg as string
-        enc_data = gpg.encrypt(msg, to + '@keybase.io')
+        # treat msg as plaintext string
+        enc_data = gpg.encrypt(msg, to, always_trust=True)
         enc_str = str(enc_data)
-        print 'ok :', enc_data.ok
-        print 'status: ', enc_data.status
-        print 'stderr: ', enc_data.stderr
-        print 'message: ', msg
-        print 'enc: ', enc_str
         return enc_str
 
+
+def decrypt_msg(enc):
+    if isinstance(enc, file):
+        # TODO: Decrypt file path
+        return None
+    else:
+        # treat enc as encrypted string
+        msg = gpg.decrypt(enc, always_trust=True)
+        return msg
 
