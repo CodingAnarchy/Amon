@@ -18,34 +18,38 @@ import triplesec
 # Log in and get session idea
 user = raw_input("Username: ")
 salt = keybase.get_salt(user)
+csrf = salt["csrf"]
 
 pw = raw_input("Password: ")
 ts = triplesec.TripleSec(key=pw)
-login_reply = keybase.login(user, pw, salt["salt"], salt["session"])
+login_reply = keybase.login(user, pw, salt["salt"], salt["session"], csrf)
 me = login_reply['me']
 session = login_reply['session']
+csrf = login_reply['csrf_token']
 
-keys = keybase.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
-pub_key = me['public_keys']['primary']['bundle']
+# keys = keybase.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
+# pub_key = me['public_keys']['primary']['bundle']
 
 # Test code for obtaining a user's public key
-pub_key = keybase.user_pub_key('thorodinson')
-import_result = gpg.import_keys(pub_key)
-pprint(import_result.results)
+# pub_key = keybase.user_pub_key('thorodinson')
+# import_result = gpg.import_keys(pub_key)
+# pprint(import_result.results)
+#
+# priv_key = keybase.decode_priv_key(me['private_keys']['primary']['bundle'], ts)
+# import_result = gpg.import_keys(priv_key)
+# pprint(import_result.results)
+#
+# print gpg.list_keys()
+#
+# to = import_result.fingerprints[0]
+# test = gpg.export_keys(to)
+#
+# enc = gpg.encrypt_msg('A simple test', to)
+# print enc
+#
+# dec = gpg.decrypt_msg(enc)
+# print dec
 
-priv_key = keybase.decode_priv_key(me['private_keys']['primary']['bundle'], ts)
-import_result = gpg.import_keys(priv_key)
-pprint(import_result.results)
-
-print gpg.list_keys()
-
-to = import_result.fingerprints[0]
-test = gpg.export_keys(to)
-
-enc = gpg.encrypt_msg('A simple test', to)
-print enc
-
-dec = gpg.decrypt_msg(enc)
-print dec
+keybase.kill_sessions(session, csrf)
 
 

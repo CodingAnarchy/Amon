@@ -20,16 +20,17 @@ def get_salt(user):
     if data["status"]["code"] != 0:
         raise Exception("Attempt to get salt error: " + str(data["status"]["name"]) + '\nDescription: ' +
                         str(data["status"]["desc"]))
-    result = {"salt": data["salt"], "session": data["login_session"]}
+    result = {"salt": data["salt"], "session": data["login_session"], "csrf": data["csrf_token"]}
     return result
 
 
-def login(user, pw, salt, session):
+def login(user, pw, salt, session, csrf):
     print "Logging in..."
     login_url = kb_url + 'login.json'
     pwh = scrypt.hash(pw, unhexlify(salt), 2**15, 8, 1, 224)[192:224]
     hmac_pwh = hmac.new(pwh, b64decode(session), sha512)
-    r = requests.post(login_url, params={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(), 'login_session': session})
+    r = requests.post(login_url, params={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(),
+                                         'login_session': session, 'csrf_token': csrf})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
         raise Exception("Login attempt error: " + str(data["status"]["name"]) + '\nDescription: ' +
@@ -100,7 +101,20 @@ def key_fetch(key_ids, ops=None, session=None):
 
 
 def decode_priv_key(obj, ts):
+    # Private keys are encoded on Keybased using P3SKB format and TripleSec
+    # Have to decode any private keys obtained before using them with GPG
     enc = msgpack.unpackb(b64decode(obj))
     enc = enc['body']['priv']['data']
     priv_key = ts.decrypt(enc)
     return priv_key
+
+
+def kill_sessions(session, csrf):
+    ks_url = kb_url + 'session/killall.json'
+    print csrf
+    r = requests.post(ks_url, params={'session': session, 'csrf_token': csrf})
+    data = json.loads(r.text)
+    if data['status']['code'] != 0:
+        raise Exception("Attempt to kill user login sessions error: " + str(data["status"]["name"]) +
+                        '\nDescription: ' + str(data["status"]["desc"]))
+    return
