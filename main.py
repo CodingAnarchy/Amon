@@ -1,4 +1,4 @@
-from lib import keybase, gpg
+from lib import keybase, gpg, gmail
 from pprint import pprint
 import triplesec
 
@@ -31,8 +31,8 @@ session = login_reply['session']
 # pub_key = me['public_keys']['primary']['bundle']
 
 # Test code for obtaining a user's public key
-# pub_key = keybase.user_pub_key('thorodinson')
-# import_result = gpg.import_keys(pub_key)
+pub_key = keybase.user_pub_key('christopherburg')
+import_result = gpg.import_keys(pub_key)
 # pprint(import_result.results)
 #
 # priv_key = keybase.decode_priv_key(me['private_keys']['primary']['bundle'], ts)
@@ -41,18 +41,22 @@ session = login_reply['session']
 #
 # print gpg.list_keys()
 #
-# to = import_result.fingerprints[0]
+to = import_result.fingerprints[0]
 # test = gpg.export_keys(to)
 #
-# enc = gpg.encrypt_msg('A simple test', to)
+enc = gpg.encrypt_msg('A simple test of encrypted email!', to)
 # print enc
 #
 # dec = gpg.decrypt_msg(enc)
 # print dec
 
-results, csrf = keybase.user_autocomplete('thor')
-for u in results:
-    print u['components']['username']['val']
+# results, csrf = keybase.user_autocomplete('thor')
+# for u in results:
+#     print u['components']['username']['val']
+
+print "Sending encrypted email...."
+gmail.send_email('mtanous22@gmail.com', ['mtanous22@gmail.com', '<redacted>'], enc)
+print "Email away!"
 
 keybase.kill_sessions(session, csrf)
 
