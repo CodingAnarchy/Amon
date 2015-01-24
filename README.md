@@ -1,4 +1,4 @@
-# Amon
+# Amon v0.0.1
 
 An interface for Keybase.io written in Python.
 
