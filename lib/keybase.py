@@ -60,6 +60,16 @@ def user_lookup(ltype, users, fields):
     return data
 
 
+def user_autocomplete(user):
+    ua_url = kb_url + 'user/autocomplete.json'
+    r = requests.get(ua_url, params={'q': user})
+    data = json.loads(r.text)
+    if data["status"]["code"] != 0:
+        raise Exception("Attempt to autocomplete user query error: " + str(data["status"]["name"]) +
+                        '\nDescription: ' + str(data["status"]["desc"]))
+    return data['completions'], data['csrf_token']
+
+
 def user_pub_key(user):
     print "Obtaining public key for " + user
     uk_url = 'https://keybase.io/' + user + '/key.asc'
@@ -111,7 +121,7 @@ def decode_priv_key(obj, ts):
 
 def kill_sessions(session, csrf):
     ks_url = kb_url + 'session/killall.json'
-    print csrf
+    # print csrf
     r = requests.post(ks_url, params={'session': session, 'csrf_token': csrf})
     data = json.loads(r.text)
     if data['status']['code'] != 0:

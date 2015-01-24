@@ -25,7 +25,7 @@ ts = triplesec.TripleSec(key=pw)
 login_reply = keybase.login(user, pw, salt["salt"], salt["session"], csrf)
 me = login_reply['me']
 session = login_reply['session']
-csrf = login_reply['csrf_token']
+# csrf = login_reply['csrf_token']
 
 # keys, csrf = keybase.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
 # pub_key = me['public_keys']['primary']['bundle']
@@ -49,6 +49,10 @@ csrf = login_reply['csrf_token']
 #
 # dec = gpg.decrypt_msg(enc)
 # print dec
+
+results, csrf = keybase.user_autocomplete('thor')
+for u in results:
+    print u['components']['username']['val']
 
 keybase.kill_sessions(session, csrf)
 
