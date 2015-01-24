@@ -97,7 +97,7 @@ def key_fetch(key_ids, ops=None, session=None):
     if data["status"]["code"] != 0:
         raise Exception("Attempt to fetch keys error: " + str(data["status"]["name"]) + '\nDescription: ' +
                         str(data["status"]["desc"]))
-    return data['keys']
+    return data['keys'], data['csrf_token']
 
 
 def decode_priv_key(obj, ts):
