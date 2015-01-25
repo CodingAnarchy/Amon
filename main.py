@@ -31,33 +31,37 @@ session = login_reply['session']
 # pub_key = me['public_keys']['primary']['bundle']
 
 # Test code for obtaining a user's public key
-pub_key = keybase.user_pub_key('christopherburg')
-import_result = gpg.import_keys(pub_key)
+# pub_key = keybase.user_pub_key('christopherburg')
+# import_result = gpg.import_keys(pub_key)
 # pprint(import_result.results)
-#
-# priv_key = keybase.decode_priv_key(me['private_keys']['primary']['bundle'], ts)
-# import_result = gpg.import_keys(priv_key)
-# pprint(import_result.results)
-#
-# print gpg.list_keys()
-#
+
+# print priv_key
+
+priv_key = keybase.decode_priv_key(me['private_keys']['primary']['bundle'], ts)
+import_result = gpg.import_keys(priv_key)
+pprint(import_result.results)
 to = import_result.fingerprints[0]
+
+
+# print gpg.list_keys(True)
+
 # test = gpg.export_keys(to)
-#
-enc = gpg.encrypt_msg('A simple test of encrypted email!', to)
-# print enc
-#
-# dec = gpg.decrypt_msg(enc)
-# print dec
+# print test
+
+enc = gpg.encrypt_msg('A simple test of encryption with downloaded keys!', to)
+print enc
+
+dec = gpg.decrypt_msg(enc, pw)
+print dec
 
 # results, csrf = keybase.user_autocomplete('thor')
 # for u in results:
 #     print u['components']['username']['val']
 
-print "Sending encrypted email...."
-gmail.send_email('mtanous22@gmail.com', ['mtanous22@gmail.com', '<redacted>'], enc)
-print "Email away!"
+# print "Sending encrypted email...."
+# gmail.send_email('mtanous22@gmail.com', ['mtanous22@gmail.com', '<redacted>'], enc)
+# print "Email away!"
 
-keybase.kill_sessions(session, csrf)
+# keybase.kill_sessions(session, csrf)
 
 

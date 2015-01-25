@@ -7,7 +7,8 @@ import msgpack
 from base64 import b64decode
 import requests
 import scrypt
-from lib.utils import comma_sep_list
+from .utils import comma_sep_list
+from pprint import pprint
 
 
 kb_url = 'https://keybase.io/_/api/1.0/'
@@ -111,13 +112,31 @@ def key_fetch(key_ids, ops=None, session=None):
 
 
 def decode_priv_key(obj, ts):
-    # Private keys are encoded on Keybased using P3SKB format and TripleSec
+    # Private keys are encoded on Keybase using P3SKB format and TripleSec
     # Have to decode any private keys obtained before using them with GPG
     enc = msgpack.unpackb(b64decode(obj))
-    enc = enc['body']['priv']['data']
-    priv_key = ts.decrypt(enc)
+    priv = enc['body']['priv']['data']
+    priv_key = ts.decrypt(priv)
     return priv_key
 
+
+# In progress - does not currently work!
+def encode_keys(pub, sec, ts):
+    # Private keys are encoded on Keybase using P3SKB format and TripleSec
+    # Have to encode any private keys before uploading them
+    enc = ts.encrypt(sec)
+    version = 1
+    encrypt = 3  # TripleSec version 3
+    tag = 513
+    hash_type = 8  # corresponds to SHA-256
+    hash_val = buffer(0)
+
+    obj = json.dumps({'version': version, 'tag': tag, 'hash': {'type': hash_type, 'value': hash_val},
+                     'body': {'pub': pub, 'priv': {'data': enc, 'encryption': encrypt}}})
+    pprint(obj)
+    # enc = msgpack.unpackb(b64decode(obj))
+    # enc = enc['body']['priv']['data']
+    return obj
 
 def kill_sessions(session, csrf):
     ks_url = kb_url + 'session/killall.json'
