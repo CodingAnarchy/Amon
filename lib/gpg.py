@@ -32,6 +32,7 @@ def list_keys(secret=False):
 
 
 def encrypt_msg(msg, to):
+    print "Encrypting msg..."
     if isinstance(msg, file):
         # TODO: Encrypt file path
         return None
@@ -39,15 +40,20 @@ def encrypt_msg(msg, to):
         # treat msg as plaintext string
         enc_data = gpg.encrypt(msg, to, always_trust=True)
         enc_str = str(enc_data)
+        if not enc_str.ok:
+            raise Exception("GPG encryption error: \nstatus: " + enc_str.status + '\nstderr: ' + enc_str.stderr)
         return enc_str
 
 
-def decrypt_msg(enc):
+def decrypt_msg(enc, pw):
+    print "Decrypting message..."
     if isinstance(enc, file):
         # TODO: Decrypt file path
         return None
     else:
         # treat enc as encrypted string
-        msg = gpg.decrypt(enc, always_trust=True)
-        return msg
+        msg = gpg.decrypt(enc, passphrase=pw, always_trust=True)
+        if not msg.ok:
+            raise Exception("GPG decryption error: \nstatus: " + msg.status + '\nstderr: ' + msg.stderr)
+        return msg.data
 
