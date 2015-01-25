@@ -1,4 +1,9 @@
 # Compiled Source Files #
 *.pyc
 
+
+# Exported GPG key files #
+*.asc
+*.gpg
+
 .idea
