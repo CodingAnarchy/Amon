@@ -141,12 +141,33 @@ def decode_priv_key(obj, ts):
 def kill_sessions(session, csrf):
     ks_url = kb_url + 'session/killall.json'
     # print csrf
-    r = requests.post(ks_url, params={'session': session, 'csrf_token': csrf})
+    r = requests.post(ks_url, data={'session': session, 'csrf_token': csrf})
     data = json.loads(r.text)
     if data['status']['code'] != 0:
         raise Exception("Attempt to kill user login sessions error: " + str(data["status"]["name"]) +
                         '\nDescription: ' + str(data["status"]["desc"]))
     return
+
+
+def edit_profile(session, csrf, bio=None, loc=None, name=None):
+    ep_url = kb_url + 'profile-edit.json'
+    params = {}
+    if bio is not None:
+        params['bio'] = bio
+    if name is not None:
+        params['full_name'] = name
+    if loc is not None:
+        params['location'] = loc
+    if not params:
+        raise Exception("Editing keybase profile requires at least one parameter: name, bio, or location.")
+    params['csrf_token'] = csrf
+    params['session'] = session
+    r = requests.post(ep_url, data=params)
+    data = json.loads(r.text)
+    if data['status']['code'] != 0:
+        raise Exception("Attempt to edit keybase profile error: " + str(data["status"]["name"]) +
+                        '\nDescription: ' + str(data["status"]["desc"]))
+    return data['csrf_token']
 
 
 def discover_users(lookups, usernames_only=False, flatten=False):
