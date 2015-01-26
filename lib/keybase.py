@@ -10,7 +10,6 @@ import scrypt
 from .utils import comma_sep_list
 from pprint import pprint
 
-
 kb_url = 'https://keybase.io/_/api/1.0/'
 
 
@@ -20,7 +19,7 @@ def get_salt(user):
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
         raise Exception("Attempt to get salt error: " + str(data["status"]["name"]) + '\nDescription: ' +
-                        str(data["status"]["desc"]))
+                           str(data["status"]["desc"]))
     result = {"salt": data["salt"], "session": data["login_session"], "csrf": data["csrf_token"]}
     return result
 
@@ -120,23 +119,24 @@ def decode_priv_key(obj, ts):
     return priv_key
 
 
-# In progress - does not currently work!
-def encode_keys(pub, sec, ts):
-    # Private keys are encoded on Keybase using P3SKB format and TripleSec
-    # Have to encode any private keys before uploading them
-    enc = ts.encrypt(sec)
-    version = 1
-    encrypt = 3  # TripleSec version 3
-    tag = 513
-    hash_type = 8  # corresponds to SHA-256
-    hash_val = buffer(0)
+# In progress - does not currently work!  Will be necessary for upload of private key to keybase (if desired).
+# def encode_keys(pub, sec, ts):
+#     # Private keys are encoded on Keybase using P3SKB format and TripleSec
+#     # Have to encode any private keys before uploading them
+#     enc = ts.encrypt(sec)
+#     version = 1
+#     encrypt = 3  # TripleSec version 3
+#     tag = 513
+#     hash_type = 8  # corresponds to SHA-256
+#     hash_val = buffer(0)
+#
+#     obj = json.dumps({'version': version, 'tag': tag, 'hash': {'type': hash_type, 'value': hash_val},
+#                      'body': {'pub': pub, 'priv': {'data': enc, 'encryption': encrypt}}})
+#     pprint(obj)
+#     # enc = msgpack.unpackb(b64decode(obj))
+#     # enc = enc['body']['priv']['data']
+#     return obj
 
-    obj = json.dumps({'version': version, 'tag': tag, 'hash': {'type': hash_type, 'value': hash_val},
-                     'body': {'pub': pub, 'priv': {'data': enc, 'encryption': encrypt}}})
-    pprint(obj)
-    # enc = msgpack.unpackb(b64decode(obj))
-    # enc = enc['body']['priv']['data']
-    return obj
 
 def kill_sessions(session, csrf):
     ks_url = kb_url + 'session/killall.json'
@@ -147,3 +147,29 @@ def kill_sessions(session, csrf):
         raise Exception("Attempt to kill user login sessions error: " + str(data["status"]["name"]) +
                         '\nDescription: ' + str(data["status"]["desc"]))
     return
+
+
+def discover_users(lookups, usernames_only=False, flatten=False):
+    kd_url = kb_url + 'user/discover.json'
+    if not isinstance(lookups, dict):
+        raise Exception()
+    for t in lookups:
+        # Verify the selected type will work with keybase API call
+        if t not in ['twitter', 'github', 'hackernews', 'web', 'coinbase', 'key_fingerprint']:
+            raise Exception("Keybase discover users error: cannot discover users using type " + t + ".")
+        # Convert lookups to necessary format for API call
+        lookups[t] = comma_sep_list(lookups[t])
+
+    # Set up parameter call for request
+    params = lookups
+    if usernames_only:
+        params['usernames_only'] = 1
+    if flatten:
+        params['flatten'] = 1
+
+    r = requests.get(kd_url, params=params)
+    data = json.loads(r.text)
+    if data["status"]["code"] != 0:
+        raise Exception("Attempt to discover users error: " + str(data["status"]["name"]) + '\nDescription: ' +
+                        str(data["status"]["desc"]))
+    return data
