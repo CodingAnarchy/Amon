@@ -5,12 +5,9 @@ import triplesec
 
 # Log in and get session idea
 user = raw_input("Username: ")
-salt = keybase.get_salt(user)
-salt_csrf = salt["csrf"]
-
 pw = raw_input("Password: ")
 ts = triplesec.TripleSec(key=pw)
-login_reply = keybase.login(user, pw, salt["salt"], salt["session"], salt_csrf)
+login_reply = keybase.login(user, pw)
 me = login_reply['me']
 session = login_reply['session']
 csrf = login_reply['csrf_token']
@@ -51,38 +48,31 @@ csrf = login_reply['csrf_token']
 # print "Email away!"
 
 # Test code for use with user lookup
-lookup = 'temp'
-users = []
-fields = 'basics'
-while lookup != '':
-    lookup = raw_input("User to look up: ")
-    if lookup != '':
-        users.append(lookup)
+# lookup = 'temp'
+# users = []
+# fields = 'basics'
+# while lookup != '':
+#     lookup = raw_input("User to look up: ")
+#     if lookup != '':
+#         users.append(lookup)
+#
+# status = keybase.user_lookup('domain', users, fields)
+# print status['status']
+# lookup_csrf = status['csrf_token']
 
-status = keybase.user_lookup('domain', users, fields)
-print status['status']
-lookup_csrf = status['csrf_token']
+# print "LOGIN: " + csrf
 
-# if lookup_csrf != csrf:
-#     print "SALT: " + salt_csrf
-#     print "LOGIN: " + csrf
-#     print "LOOKUP: " + lookup_csrf
-#     raise Exception("CSRF tokens are not the same!")
+# edit_csrf = keybase.edit_profile(session, csrf, name="Matt Tanous",
+#                                  bio="Anarchist working to develop a digital end-run around the state.",
+#                                  loc='United States')
 
-print "SALT: " + salt_csrf
-print "LOGIN: " + csrf
-print "LOOKUP: " + lookup_csrf
-
-edit_csrf = keybase.edit_profile(session, lookup_csrf, name="Matt Tanous",
-                                 bio="Anarchist working to develop a digital end-run around the state.",
-                                 loc='United States')
-
-keys, key_csrf = keybase.key_fetch(me['public_keys']['primary']['kid'], ['encrypt'])
+# keys, key_csrf = keybase.key_fetch(me['public_keys']['primary']['kid'], ['encrypt'])
 # pub_key = me['public_keys']['primary']['bundle']
 
 
-print "KEY: " + key_csrf
-print "EDIT: " + edit_csrf
+# print "KEY: " + key_csrf
+# print "EDIT: " + edit_csrf
+print keybase.session.session_id
 # keybase.kill_sessions(session, lookup_csrf)
 
 

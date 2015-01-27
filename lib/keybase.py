@@ -9,8 +9,11 @@ import requests
 import scrypt
 from .utils import comma_sep_list
 from pprint import pprint
+from collections import namedtuple
 
 kb_url = 'https://keybase.io/_/api/1.0/'
+Session = namedtuple('session', 'session_id csrf_token')
+session = ''
 
 
 def get_salt(user):
@@ -18,24 +21,26 @@ def get_salt(user):
     r = requests.get(gs_url, params={'email_or_username': user})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to get salt error: " + str(data["status"]["name"]) + '\nDescription: ' +
-                           str(data["status"]["desc"]))
-    result = {"salt": data["salt"], "session": data["login_session"], "csrf": data["csrf_token"]}
-    return result
+        raise Exception("Attempt to get salt error: " + str(data["status"]["name"]) +
+                        '\nDescription: ' + str(data["status"]["desc"]))
+    return data["salt"], data["login_session"]
 
 
-def login(user, pw, salt, session, csrf):
+def login(user, pw):
     print "Logging in..."
+    global session
+    salt, session_id = get_salt(user)
     login_url = kb_url + 'login.json'
     pwh = scrypt.hash(pw, unhexlify(salt), 2**15, 8, 1, 224)[192:224]
-    hmac_pwh = hmac.new(pwh, b64decode(session), sha512)
+    hmac_pwh = hmac.new(pwh, b64decode(session_id), sha512)
     r = requests.post(login_url, params={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(),
-                                         'login_session': session, 'csrf_token': csrf})
+                                         'login_session': session_id})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
         raise Exception("Login attempt error: " + str(data["status"]["name"]) + '\nDescription: ' +
                         str(data["status"]["desc"]))
     print "Logged in!"
+    session = Session(session_id, data['csrf_token'])
     return data
 
 
