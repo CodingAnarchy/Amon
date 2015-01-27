@@ -73,7 +73,9 @@ print "SALT: " + salt_csrf
 print "LOGIN: " + csrf
 print "LOOKUP: " + lookup_csrf
 
-edit_csrf = keybase.edit_profile(session, lookup_csrf, loc='United States')
+edit_csrf = keybase.edit_profile(session, lookup_csrf, name="Matt Tanous",
+                                 bio="Anarchist working to develop a digital end-run around the state.",
+                                 loc='United States')
 
 keys, key_csrf = keybase.key_fetch(me['public_keys']['primary']['kid'], ['encrypt'])
 # pub_key = me['public_keys']['primary']['bundle']
@@ -81,6 +83,6 @@ keys, key_csrf = keybase.key_fetch(me['public_keys']['primary']['kid'], ['encryp
 
 print "KEY: " + key_csrf
 print "EDIT: " + edit_csrf
-keybase.kill_sessions(session, lookup_csrf)
+# keybase.kill_sessions(session, lookup_csrf)
 
 
