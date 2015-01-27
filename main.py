@@ -3,26 +3,14 @@ from pprint import pprint
 import triplesec
 
 
-# Test code for use with user lookup
-# lookup = 'temp'
-# users = []
-# fields = 'basics'
-# while lookup != '':
-#     lookup = raw_input("User to look up: ")
-#     if lookup != '':
-#         users.append(lookup)
-#
-# status = keybase.user_lookup('domain', users, fields)
-# print status['status']
-
 # Log in and get session idea
 user = raw_input("Username: ")
 salt = keybase.get_salt(user)
-csrf = salt["csrf"]
+salt_csrf = salt["csrf"]
 
 pw = raw_input("Password: ")
 ts = triplesec.TripleSec(key=pw)
-login_reply = keybase.login(user, pw, salt["salt"], salt["session"], csrf)
+login_reply = keybase.login(user, pw, salt["salt"], salt["session"], salt_csrf)
 me = login_reply['me']
 session = login_reply['session']
 csrf = login_reply['csrf_token']
@@ -62,8 +50,37 @@ csrf = login_reply['csrf_token']
 # gmail.send_email('mtanous22@gmail.com', ['mtanous22@gmail.com', '<redacted>'], enc)
 # print "Email away!"
 
-keybase.edit_profile(session, csrf, loc='United States')
+# Test code for use with user lookup
+lookup = 'temp'
+users = []
+fields = 'basics'
+while lookup != '':
+    lookup = raw_input("User to look up: ")
+    if lookup != '':
+        users.append(lookup)
 
-keybase.kill_sessions(session, csrf)
+status = keybase.user_lookup('domain', users, fields)
+print status['status']
+lookup_csrf = status['csrf_token']
+
+# if lookup_csrf != csrf:
+#     print "SALT: " + salt_csrf
+#     print "LOGIN: " + csrf
+#     print "LOOKUP: " + lookup_csrf
+#     raise Exception("CSRF tokens are not the same!")
+
+print "SALT: " + salt_csrf
+print "LOGIN: " + csrf
+print "LOOKUP: " + lookup_csrf
+
+edit_csrf = keybase.edit_profile(session, lookup_csrf, loc='United States')
+
+keys, key_csrf = keybase.key_fetch(me['public_keys']['primary']['kid'], ['encrypt'])
+# pub_key = me['public_keys']['primary']['bundle']
+
+
+print "KEY: " + key_csrf
+print "EDIT: " + edit_csrf
+keybase.kill_sessions(session, lookup_csrf)
 
 
