@@ -54,28 +54,40 @@ def login(user, pw):
                         '\nDescription: ' + str(data["status"]["desc"]))
     print "Logged in!"
     session = Session(data['session'], data['csrf_token'])
-    return data
+    return data['me']
 
 
+# Look up users on Keybase.io
 def user_lookup(ltype, users, fields):
     ul_url = kb_url + 'user/lookup.json'
 
-    # Verify type is valid lookup: github, twitter, and reddit (at least) may not work due to API-side issue - 1/22/2015
+    # Coerce string type inputs to items in list
+    if isinstance(users, basestring):
+        users = users.split(',')
+    if isinstance(fields, basestring):
+        fields = fields.split(',')
+
+    # Verify type is valid lookup: github, twitter, and reddit (at least)
+    # may not work due to API server-side issue - 1/22/2015
     if ltype not in ['usernames', 'domain', 'twitter', 'github', 'reddit', 'hackernews', 'coinbase', 'key_fingerprint']:
         raise Exception("User lookup attempted with invalid type of lookup.")
     elif len(users) > 1 and not ltype == 'usernames':
         raise Exception('Only username lookups can be multi-valued.')
 
-    # Verify user and fields lists are in an appropriate type and format
+    if not set(fields).issubset({'pictures', 'basics', 'public_keys', 'profile', 'proofs_summary',
+                                 'remote_key_proofs', 'sigs', 'cryptocurrency_addresses'}):
+        raise Exception("Invalid fields for user lookup.")
+
+    # Verify user and fields lists are in an appropriate type and format for URL call
     users = comma_sep_list(users)
     fields = comma_sep_list(fields)
 
     r = requests.get(ul_url, params={ltype: users, 'fields': fields})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to lookup users error: " + str(data["status"]["name"]) + '\nDescription: ' +
-                        str(data["status"]["desc"]))
-    return data
+        raise Exception("Attempt to lookup users error: " + str(data["status"]["name"]) +
+                        '\nDescription: ' + str(data["status"]["desc"]))
+    return data['them']
 
 
 def user_autocomplete(user):
@@ -85,7 +97,7 @@ def user_autocomplete(user):
     if data["status"]["code"] != 0:
         raise Exception("Attempt to autocomplete user query error: " + str(data["status"]["name"]) +
                         '\nDescription: ' + str(data["status"]["desc"]))
-    return data['completions'], data['csrf_token']
+    return data['completions']
 
 
 def user_pub_key(user):
@@ -187,7 +199,7 @@ def edit_profile(bio=None, loc=None, name=None):
     if data['status']['code'] != 0:
         raise Exception("Attempt to edit keybase profile error: " + str(data["status"]["name"]) +
                         '\nDescription: ' + str(data["status"]["desc"]))
-    if session.id is not None and data['csrf_token'] != session.csrf:
+    if data['csrf_token'] != session.csrf:
         raise CSRFError(session.csrf, data['csrf_token'])
     return
 
@@ -195,7 +207,7 @@ def edit_profile(bio=None, loc=None, name=None):
 def discover_users(lookups, usernames_only=False, flatten=False):
     kd_url = kb_url + 'user/discover.json'
     if not isinstance(lookups, dict):
-        raise Exception()
+        raise Exception("Discovering users requires a dictionary of types => user ids.")
     for t in lookups:
         # Verify the selected type will work with keybase API call
         if t not in ['twitter', 'github', 'hackernews', 'web', 'coinbase', 'key_fingerprint']:

@@ -7,8 +7,7 @@ import triplesec
 user = raw_input("Username: ")
 pw = raw_input("Password: ")
 ts = triplesec.TripleSec(key=pw)
-login_reply = keybase.login(user, pw)
-me = login_reply['me']
+me = keybase.login(user, pw)
 
 # keys, csrf = keybase.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
 # pub_key = me['public_keys']['primary']['bundle']
@@ -45,26 +44,16 @@ me = login_reply['me']
 # gmail.send_email('mtanous22@gmail.com', ['mtanous22@gmail.com', '<redacted>'], enc)
 # print "Email away!"
 
-# Test code for use with user lookup
-# lookup = 'temp'
-# users = []
-# fields = 'basics'
-# while lookup != '':
-#     lookup = raw_input("User to look up: ")
-#     if lookup != '':
-#         users.append(lookup)
-#
-# status = keybase.user_lookup('domain', users, fields)
-# print status['status']
+them = keybase.user_lookup('domain', 'christopherburg.com', 'pictures')
+pprint(them)
 
-keybase.edit_profile(name="Matt Tanous",
-                     bio="Anarchist working to develop a digital end-run around the state.",
-                     loc='United States')
+# keybase.edit_profile(name="Matt Tanous",
+#                      bio="Anarchist working to develop a digital end-run around the state.",
+#                      loc='United States')
 
 # keys = keybase.key_fetch(me['public_keys']['primary']['kid'], ['encrypt'])
 # pub_key = me['public_keys']['primary']['bundle']
 
-
-keybase.kill_sessions()
+# keybase.kill_sessions()
 
 
