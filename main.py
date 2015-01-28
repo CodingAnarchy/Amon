@@ -9,8 +9,6 @@ pw = raw_input("Password: ")
 ts = triplesec.TripleSec(key=pw)
 login_reply = keybase.login(user, pw)
 me = login_reply['me']
-session = login_reply['session']
-csrf = login_reply['csrf_token']
 
 # keys, csrf = keybase.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
 # pub_key = me['public_keys']['primary']['bundle']
@@ -58,21 +56,15 @@ csrf = login_reply['csrf_token']
 #
 # status = keybase.user_lookup('domain', users, fields)
 # print status['status']
-# lookup_csrf = status['csrf_token']
 
-# print "LOGIN: " + csrf
+keybase.edit_profile(name="Matt Tanous",
+                     bio="Anarchist working to develop a digital end-run around the state.",
+                     loc='United States')
 
-# edit_csrf = keybase.edit_profile(session, csrf, name="Matt Tanous",
-#                                  bio="Anarchist working to develop a digital end-run around the state.",
-#                                  loc='United States')
-
-# keys, key_csrf = keybase.key_fetch(me['public_keys']['primary']['kid'], ['encrypt'])
+# keys = keybase.key_fetch(me['public_keys']['primary']['kid'], ['encrypt'])
 # pub_key = me['public_keys']['primary']['bundle']
 
 
-# print "KEY: " + key_csrf
-# print "EDIT: " + edit_csrf
-print keybase.session.session_id
-# keybase.kill_sessions(session, lookup_csrf)
+keybase.kill_sessions()
 
 

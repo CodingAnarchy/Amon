@@ -8,12 +8,25 @@ from base64 import b64decode
 import requests
 import scrypt
 from .utils import comma_sep_list
-from pprint import pprint
+# from pprint import pprint
 from collections import namedtuple
+from warnings import warn
 
 kb_url = 'https://keybase.io/_/api/1.0/'
-Session = namedtuple('session', 'session_id csrf_token')
+Session = namedtuple('session', 'id csrf')
 session = ''
+
+
+class CSRFError(Exception):
+    def __init__(self, stored, ret):
+        self.msg = "CSRF mismatch occurred!\nStored CSRF: " + stored + "\nReturned CSRF: " + ret
+
+    def __str__(self):
+        return self.msg
+
+
+class CSRFWarning(Warning):
+    pass
 
 
 def get_salt(user):
@@ -33,14 +46,14 @@ def login(user, pw):
     login_url = kb_url + 'login.json'
     pwh = scrypt.hash(pw, unhexlify(salt), 2**15, 8, 1, 224)[192:224]
     hmac_pwh = hmac.new(pwh, b64decode(session_id), sha512)
-    r = requests.post(login_url, params={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(),
-                                         'login_session': session_id})
+    r = requests.post(login_url, data={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(),
+                                       'login_session': session_id})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Login attempt error: " + str(data["status"]["name"]) + '\nDescription: ' +
-                        str(data["status"]["desc"]))
+        raise Exception("Login attempt error: " + str(data["status"]["name"]) +
+                        '\nDescription: ' + str(data["status"]["desc"]))
     print "Logged in!"
-    session = Session(session_id, data['csrf_token'])
+    session = Session(data['session'], data['csrf_token'])
     return data
 
 
@@ -84,7 +97,7 @@ def user_pub_key(user):
     return r.text
 
 
-def key_fetch(key_ids, ops=None, session=None):
+def key_fetch(key_ids, ops=None):
     print "Fetching keys..."
     kf_url = kb_url + 'key/fetch.json'
     key_ids = comma_sep_list(key_ids)
@@ -102,17 +115,30 @@ def key_fetch(key_ids, ops=None, session=None):
             opt |= 0x08
 
         if 'decrypt' in ops or 'sign' in ops:
-            if session is None:
+            if session.id is None:
                 raise Exception("Retrieving private key for encrypting or signing requires login session.")
-            r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt, 'session': session})
+            r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt, 'session': session.id})
         else:
-            r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt})
+            if session.id is None:
+                warn("Session should be submitted when fetching keys for CSRF verification!", CSRFWarning)
+                r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt})
+            else:
+                r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt, 'session': session.id})
+    else:
+        warn("Generally want to select operations needed for fetched keys to ensure future usability.", RuntimeWarning)
+        if session.id is None:
+            warn("Session should be submitted when fetching keys for CSRF verification!", CSRFWarning)
+            r = requests.get(kf_url, params={'kids': key_ids})
+        else:
+            r = requests.get(kf_url, params={'kids': key_ids, 'session': session.id})
 
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to fetch keys error: " + str(data["status"]["name"]) + '\nDescription: ' +
-                        str(data["status"]["desc"]))
-    return data['keys'], data['csrf_token']
+        raise Exception("Attempt to fetch keys error: " + str(data["status"]["name"]) +
+                        '\nDescription: ' + str(data["status"]["desc"]))
+    if session.id is not None and data['csrf_token'] != session.csrf:
+        raise CSRFError(session.csrf, data['csrf_token'])
+    return data['keys']
 
 
 def decode_priv_key(obj, ts):
@@ -142,19 +168,8 @@ def decode_priv_key(obj, ts):
 #     # enc = enc['body']['priv']['data']
 #     return obj
 
-
-def kill_sessions(session, csrf):
-    ks_url = kb_url + 'session/killall.json'
-    # print csrf
-    r = requests.post(ks_url, data={'session': session, 'csrf_token': csrf})
-    data = json.loads(r.text)
-    if data['status']['code'] != 0:
-        raise Exception("Attempt to kill user login sessions error: " + str(data["status"]["name"]) +
-                        '\nDescription: ' + str(data["status"]["desc"]))
-    return
-
-
-def edit_profile(session, csrf, bio=None, loc=None, name=None):
+def edit_profile(bio=None, loc=None, name=None):
+    print "Updating profile..."
     ep_url = kb_url + 'profile-edit.json'
     params = {}
     if bio is not None:
@@ -165,14 +180,16 @@ def edit_profile(session, csrf, bio=None, loc=None, name=None):
         params['location'] = loc
     if not params:
         raise Exception("Editing keybase profile requires at least one parameter: name, bio, or location.")
-    params['csrf_token'] = csrf
-    params['session'] = session
+    params['csrf_token'] = session.csrf
+    params['session'] = session.id
     r = requests.post(ep_url, data=params)
     data = json.loads(r.text)
     if data['status']['code'] != 0:
         raise Exception("Attempt to edit keybase profile error: " + str(data["status"]["name"]) +
                         '\nDescription: ' + str(data["status"]["desc"]))
-    return data['csrf_token']
+    if session.id is not None and data['csrf_token'] != session.csrf:
+        raise CSRFError(session.csrf, data['csrf_token'])
+    return
 
 
 def discover_users(lookups, usernames_only=False, flatten=False):
@@ -199,3 +216,13 @@ def discover_users(lookups, usernames_only=False, flatten=False):
         raise Exception("Attempt to discover users error: " + str(data["status"]["name"]) + '\nDescription: ' +
                         str(data["status"]["desc"]))
     return data
+
+
+def kill_sessions():
+    ks_url = kb_url + 'session/killall.json'
+    r = requests.post(ks_url, data={'session': session.id, 'csrf_token': session.csrf})
+    data = json.loads(r.text)
+    if data['status']['code'] != 0:
+        raise Exception("Attempt to kill user login sessions error: " + str(data["status"]["name"]) +
+                        '\nDescription: ' + str(data["status"]["desc"]))
+    return
