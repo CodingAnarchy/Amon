@@ -3,11 +3,15 @@ import json
 from binascii import unhexlify
 import hmac
 from hashlib import sha512
-import msgpack
 from base64 import b64decode
+from os import urandom
+
+import msgpack
 import requests
 import scrypt
+
 from .utils import comma_sep_list
+
 # from pprint import pprint
 from collections import namedtuple
 from warnings import warn
@@ -28,6 +32,20 @@ class CSRFError(Exception):
 class CSRFWarning(Warning):
     pass
 
+
+# Currently requires invitation id - don't use yet
+def signup(name, email, uname, pw, invite):
+    su_url = kb_url + 'signup.json'
+    salt = hex(urandom(16))
+    pwh = scrypt.hash(pw, unhexlify(salt), 2**15, 8, 1, 224)  # Verify these parameters are appropriate?
+    r = requests.post(su_url, data={'name': name, 'email': email, 'username': uname,
+                                    'pwh': pwh, 'salt': salt, 'invitation_id': invite})
+    data = json.loads(r.text)
+    # TODO: parse the signup return for reuse of username/email instead of just failing
+    if data['status']['code'] != 0:
+        raise Exception("Sign up failed: " + str(data['status']['name']) +
+                        '\nDescription: ' + str(data["status"]["desc"]))
+    return
 
 def get_salt(user):
     gs_url = kb_url + 'getsalt.json'
