@@ -19,7 +19,7 @@ def parse_email(full_msg):
     raw = full_msg[0][1]
     gm_headers = full_msg[0][0]
     # flags = full_msg[1]
-    email_msg = email_msg_from_string(raw)
+    email_msg = email.message_from_string(raw)
 
     # note that if you want to get text content (body) and the email contains
     # multiple payloads (plaintext/html), you must parse each message separately
@@ -67,7 +67,7 @@ def parse_email(full_msg):
 
 
 def fetch_email(mail, uid):
-    result, data = mail.uid('fetch', uid, '(RFC822  X-GM-THRID X-GM-MSGID X-GM-LABELS X-GM-MSGID)')
+    result, data = mail.uid('fetch', uid, '(RFC822 X-GM-THRID X-GM-MSGID X-GM-LABELS X-GM-MSGID)')
     return data
 
 
