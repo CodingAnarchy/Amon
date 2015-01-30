@@ -75,10 +75,11 @@ def fetch_email(mail, uid):
 
 
 def make_query():
-    return '(SENTSINCE {startdate}) (SENTBEFORE {enddate})'.format(
-        startdate=(datetime.date.today() - datetime.timedelta(1)).strftime("%d-%b-%Y"),
-        enddate=(datetime.date.today()).strftime("%d-%b-%Y")
-    )
+    # return '(SENTSINCE {startdate}) (SENTBEFORE {enddate})'.format(
+    #     startdate=(datetime.date.today() - datetime.timedelta(1)).strftime("%d-%b-%Y"),
+    #     enddate=(datetime.date.today()).strftime("%d-%b-%Y")
+    # )
+    return '(SENTSINCE "01-JAN-2015" BODY "BEGIN PGP")'
 
 
 def auth():
@@ -96,7 +97,7 @@ def auth():
     print results
     print "IMAP Server returned " + str(len(results)) + " results"
     pp = pprint.PrettyPrinter(indent=4)
-    print pp.pformat([parse_email(fetch_email(mail, i))['headers'] for i in results])
+    print pp.pformat([parse_email(fetch_email(mail, i))['body'] for i in results])
 
 
 def send_email(fromaddr, toaddr, msg):
