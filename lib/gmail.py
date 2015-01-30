@@ -30,7 +30,7 @@ def parse_email(full_msg):
         for hdr, val in email_msg.items():
             for decoded_val in email.header.decode_header(val):
                 hdict.setdefault(hdr, []).append(unicode(decoded_val[0],
-                                                         decoded_val[1] if decoded_val[1] is not None else 'ascii'))
+                                                         decoded_val[1] if decoded_val[1] is not None else 'utf-8'))
         groups = gm_header_re.match(gm_headers).groups()
         hdict['X-GM-THRID'] = groups[1]
         hdict['X-GM-MSGID'] = groups[2]
@@ -40,11 +40,14 @@ def parse_email(full_msg):
 
     def get_first_text_block():
         def toutf(part):
-            charset = part.get_content_charset() if part.get_content_charset() is not None else 'ascii'
+            charset = part.get_content_charset() if part.get_content_charset() is not None else 'utf-8'
             s = part.get_payload(decode=True)
-            if part.get_content_type() == "text/html":
+            t = part.get_content_type()
+            if t == "text/html":
                 h = HTMLParser()
                 return h.unescape(unicode(s, charset))
+            elif t == "text/plain":
+                return unicode(s, charset)
             else:
                 return unicode(quopri.decodestring(s), charset)
         maintype = email_msg.get_content_maintype()

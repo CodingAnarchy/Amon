@@ -57,5 +57,3 @@ import triplesec
 # keybase.kill_sessions()
 
 gmail.auth()
-
-
