@@ -14,18 +14,25 @@ Able to login to keybase and perform basic functionality
 * autocomplete API call (could be used for search later)
 * kill user sessions
 * update user profile (must do all fields at once currently)
+* CSRF verification on API calls while logged in
   
 Able to use GnuPG to do encryption related tasks
   
 * encrypt and decrypt a message
+* sign a message and verify signatures
 * import and export public and private keys
 * list keys in keyring
     
 Able to send email using Gmail SMTP server (must have Gmail account)
+Able to fetch email from Gmail using IMAP (set to get emails with PGP messages)
 
 # In Development
 
-* CSRF verification on API calls while logged in
+* Continued keybase API support (signup in progress)
+* Continued GPG support
+* Support for working with encrypted and plaintext files
+* Email parsing and decrypting support
+* GUI interface (using GTK+3)
   
 # Obligatory Reminder
 
