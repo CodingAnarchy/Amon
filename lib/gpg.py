@@ -69,3 +69,14 @@ def decrypt_msg(enc, pw):
             raise Exception("GPG decryption error: \nstatus: " + msg.status + '\nstderr: ' + msg.stderr)
         return msg.data
 
+
+def sign_msg(msg, keyid=None, detach=False, output=None):
+    signed = gpg.sign(msg, keyid=keyid, detach=detach, output=output)
+    return str(signed)
+
+
+def verify_msg(msg):
+    verified = gpg.verify(msg)
+    if not verified:
+        raise ValueError("Signature could not be verified!")
+    print "Signature verified!"
