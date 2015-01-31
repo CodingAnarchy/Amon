@@ -1,9 +1,8 @@
 from version import AMON_VERSION
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GObject, cairo
+from gi.repository import Gtk
 
-Gdk.threads_init()
 APP_NAME = "Amon"
 import platform
 MONOSPACE_FONT = "Lucida Console" if platform.system() == 'Windows' else 'monospace'
@@ -76,7 +75,6 @@ def login_dialog(parent):
 
 
 class AmonWindow:
-
     def show_message(self, msg):
         show_message(msg, self.window)
 
@@ -89,9 +87,15 @@ class AmonWindow:
         self.window.set_default_size(720, 350)
 
         user, password = login_dialog(self.window)
-        self.window.show_all()
+        # self.window.show_all()
         print user
         print password
 
-win = AmonWindow()
-Gtk.main()
+
+class AmonGui:
+    def __init__(self):
+        pass
+
+    def main(self):
+        w = AmonWindow()
+        Gtk.main()

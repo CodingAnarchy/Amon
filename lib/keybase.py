@@ -47,6 +47,7 @@ def signup(name, email, uname, pw, invite):
                         '\nDescription: ' + str(data["status"]["desc"]))
     return
 
+
 def get_salt(user):
     gs_url = kb_url + 'getsalt.json'
     r = requests.get(gs_url, params={'email_or_username': user})
