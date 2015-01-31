@@ -3,7 +3,7 @@ from lib.keybase import KeybaseUser
 import sys
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, Gio
 
 APP_NAME = "Amon"
 import platform
@@ -89,7 +89,6 @@ class AmonWindow(Gtk.ApplicationWindow):
 
         user, password = login_dialog(self)
         self.kb_user = KeybaseUser(user, password)
-        print self.kb_user
 
 
 class Amon(Gtk.Application):
@@ -103,6 +102,11 @@ class Amon(Gtk.Application):
     def do_startup(self):
         Gtk.Application.do_startup(self)
 
+        # quit action
+        quit_action = Gio.SimpleAction.new("quit", None)
+        quit_action.connect("activate", self.quit_callback)
+        self.add_action(quit_action)
+
         # a builder to add the UI designed with Glade to the grid
         builder = Gtk.Builder()
         # get the file (if it is there)
@@ -115,3 +119,8 @@ class Amon(Gtk.Application):
         # we use the method Gtk.Application.set_menubar(menubar) to add the menubar
         # to the application (Note: NOT the window!)
         self.set_menubar(builder.get_object("menubar"))
+        self.set_app_menu(builder.get_object("appmenu"))
+
+    def quit_callback(self, action, parameter):
+        print "You clicked \"Quit\""
+        sys.exit()
