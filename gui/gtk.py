@@ -1,5 +1,6 @@
 from lib.version import AMON_VERSION
 from lib.keybase import KeybaseUser
+from lib.error import LoginError
 import sys
 import gi
 gi.require_version('Gtk', '3.0')
@@ -87,8 +88,18 @@ class AmonWindow(Gtk.ApplicationWindow):
         self.set_border_width(0)
         self.set_default_size(720, 350)
 
-        user, password = login_dialog(self)
-        self.kb_user = KeybaseUser(user, password)
+        login_success = False
+        login_attempts = 0
+        while not login_success and login_attempts < 3:
+            user, password = login_dialog(self)
+            try:
+                self.kb_user = KeybaseUser(user, password)
+                login_success = True
+            except LoginError:
+                login_attempts += 1
+                pass
+        if login_attempts == 3:
+            raise LoginError("Attempted keybase login too many times. Aborting.")
 
 
 class Amon(Gtk.Application):
