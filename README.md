@@ -23,8 +23,14 @@ Able to use GnuPG to do encryption related tasks
 * import and export public and private keys
 * list keys in keyring
     
-Able to send email using Gmail SMTP server (must have Gmail account)
-Able to fetch email from Gmail using IMAP (set to get emails with PGP messages)
+Able to work with Gmail
+
+* send email using Gmail SMTP server (must have Gmail account)
+* fetch email from Gmail using IMAP (currently set to get emails with PGP messages)
+
+GUI interface
+
+* login prompt, followed by logging in user
 
 # In Development
 
