@@ -9,6 +9,7 @@ from os import urandom
 import msgpack
 import requests
 import scrypt
+import triplesec
 
 from .utils import comma_sep_list
 
@@ -18,7 +19,10 @@ from warnings import warn
 
 kb_url = 'https://keybase.io/_/api/1.0/'
 Session = namedtuple('session', 'id csrf')
-session = ''
+
+
+class KeybaseException(Exception):
+    pass
 
 
 class CSRFError(Exception):
@@ -43,8 +47,8 @@ def signup(name, email, uname, pw, invite):
     data = json.loads(r.text)
     # TODO: parse the signup return for reuse of username/email instead of just failing
     if data['status']['code'] != 0:
-        raise Exception("Sign up failed: " + str(data['status']['name']) +
-                        '\nDescription: ' + str(data["status"]["desc"]))
+        raise KeybaseException("Sign up failed: " + str(data['status']['name']) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
     return
 
 
@@ -53,8 +57,8 @@ def get_salt(user):
     r = requests.get(gs_url, params={'email_or_username': user})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to get salt error: " + str(data["status"]["name"]) +
-                        '\nDescription: ' + str(data["status"]["desc"]))
+        raise KeybaseException("Attempt to get salt error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
     return data["salt"], data["login_session"]
 
 
@@ -69,8 +73,8 @@ def login(user, pw):
                                        'login_session': session_id})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Login attempt error: " + str(data["status"]["name"]) +
-                        '\nDescription: ' + str(data["status"]["desc"]))
+        raise KeybaseException("Login attempt error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
     print "Logged in!"
     session = Session(data['session'], data['csrf_token'])
     return data['me']
@@ -104,8 +108,8 @@ def user_lookup(ltype, users, fields):
     r = requests.get(ul_url, params={ltype: users, 'fields': fields})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to lookup users error: " + str(data["status"]["name"]) +
-                        '\nDescription: ' + str(data["status"]["desc"]))
+        raise KeybaseException("Attempt to lookup users error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
     return data['them']
 
 
@@ -114,8 +118,8 @@ def user_autocomplete(user):
     r = requests.get(ua_url, params={'q': user})
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to autocomplete user query error: " + str(data["status"]["name"]) +
-                        '\nDescription: ' + str(data["status"]["desc"]))
+        raise KeybaseException("Attempt to autocomplete user query error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
     return data['completions']
 
 
@@ -124,7 +128,7 @@ def user_pub_key(user):
     uk_url = 'https://keybase.io/' + user + '/key.asc'
     r = requests.get(uk_url)
     if r.text == "404":
-        raise Exception("User's public key could not be found on keybase.")
+        raise KeybaseException("User's public key could not be found on keybase.")
     return r.text
 
 
@@ -165,8 +169,8 @@ def key_fetch(key_ids, ops=None):
 
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to fetch keys error: " + str(data["status"]["name"]) +
-                        '\nDescription: ' + str(data["status"]["desc"]))
+        raise KeybaseException("Attempt to fetch keys error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
     if session.id is not None and data['csrf_token'] != session.csrf:
         raise CSRFError(session.csrf, data['csrf_token'])
     return data['keys']
@@ -216,8 +220,8 @@ def edit_profile(bio=None, loc=None, name=None):
     r = requests.post(ep_url, data=params)
     data = json.loads(r.text)
     if data['status']['code'] != 0:
-        raise Exception("Attempt to edit keybase profile error: " + str(data["status"]["name"]) +
-                        '\nDescription: ' + str(data["status"]["desc"]))
+        raise KeybaseException("Attempt to edit keybase profile error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
     if data['csrf_token'] != session.csrf:
         raise CSRFError(session.csrf, data['csrf_token'])
     return
@@ -244,8 +248,8 @@ def discover_users(lookups, usernames_only=False, flatten=False):
     r = requests.get(kd_url, params=params)
     data = json.loads(r.text)
     if data["status"]["code"] != 0:
-        raise Exception("Attempt to discover users error: " + str(data["status"]["name"]) + '\nDescription: ' +
-                        str(data["status"]["desc"]))
+        raise KeybaseException("Attempt to discover users error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
     return data
 
 
@@ -254,6 +258,18 @@ def kill_sessions():
     r = requests.post(ks_url, data={'session': session.id, 'csrf_token': session.csrf})
     data = json.loads(r.text)
     if data['status']['code'] != 0:
-        raise Exception("Attempt to kill user login sessions error: " + str(data["status"]["name"]) +
-                        '\nDescription: ' + str(data["status"]["desc"]))
+        raise KeybaseException("Attempt to kill user login sessions error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
     return
+
+
+class KeybaseUser:
+    def __init__(self, user, pw):
+        self.ts = triplesec.TripleSec(key=pw)
+        try:
+            me = login(user, pw)
+        except KeybaseException:
+            # TODO: Put sign up options in here
+            raise NotImplementedError("Sign up not yet implemented!")
+        self.pub_key = me['public_keys']['primary']['bundle']
+        self.enc_sec_key = me['private_keys']['primary']['bundle']

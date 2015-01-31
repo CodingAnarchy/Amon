@@ -1,4 +1,5 @@
 from version import AMON_VERSION
+from keybase import KeybaseUser
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
@@ -87,9 +88,9 @@ class AmonWindow:
         self.window.set_default_size(720, 350)
 
         user, password = login_dialog(self.window)
+        self.kb_user = KeybaseUser(user, password)
         # self.window.show_all()
-        print user
-        print password
+        print self.kb_user
 
 
 class AmonGui:
