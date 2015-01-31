@@ -185,7 +185,7 @@ def decode_priv_key(obj, ts):
     return priv_key
 
 
-# In progress - does not currently work!  Will be necessary for upload of private key to keybase (if desired).
+# In progress - does not currently work!  Will be necessary for upload of private key to amon (if desired).
 # def encode_keys(pub, sec, ts):
 #     # Private keys are encoded on Keybase using P3SKB format and TripleSec
 #     # Have to encode any private keys before uploading them
@@ -232,7 +232,7 @@ def discover_users(lookups, usernames_only=False, flatten=False):
     if not isinstance(lookups, dict):
         raise Exception("Discovering users requires a dictionary of types => user ids.")
     for t in lookups:
-        # Verify the selected type will work with keybase API call
+        # Verify the selected type will work with amon API call
         if t not in ['twitter', 'github', 'hackernews', 'web', 'coinbase', 'key_fingerprint']:
             raise Exception("Keybase discover users error: cannot discover users using type " + t + ".")
         # Convert lookups to necessary format for API call

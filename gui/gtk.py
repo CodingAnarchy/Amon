@@ -1,5 +1,6 @@
-from version import AMON_VERSION
-from keybase import KeybaseUser
+from lib.version import AMON_VERSION
+from lib.keybase import KeybaseUser
+import sys
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
@@ -75,28 +76,42 @@ def login_dialog(parent):
         return user, pw
 
 
-class AmonWindow:
+class AmonWindow(Gtk.ApplicationWindow):
     def show_message(self, msg):
         show_message(msg, self.window)
 
-    def __init__(self):
-        self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+    def __init__(self, app):
         title = APP_NAME + ' v' + AMON_VERSION
-        self.window.set_title(title)
-        self.window.connect("destroy", Gtk.main_quit)
-        self.window.set_border_width(0)
-        self.window.set_default_size(720, 350)
+        Gtk.Window.__init__(self, title=title, application=app)
+        self.connect("destroy", Gtk.main_quit)
+        self.set_border_width(0)
+        self.set_default_size(720, 350)
 
-        user, password = login_dialog(self.window)
+        user, password = login_dialog(self)
         self.kb_user = KeybaseUser(user, password)
-        # self.window.show_all()
         print self.kb_user
 
 
-class AmonGui:
+class Amon(Gtk.Application):
     def __init__(self):
-        pass
+        Gtk.Application.__init__(self)
 
-    def main(self):
-        w = AmonWindow()
-        Gtk.main()
+    def do_activate(self):
+        win = AmonWindow(self)
+        win.show_all()
+
+    def do_startup(self):
+        Gtk.Application.do_startup(self)
+
+        # a builder to add the UI designed with Glade to the grid
+        builder = Gtk.Builder()
+        # get the file (if it is there)
+        try:
+            builder.add_from_file("gui/menubar_basis.ui")
+        except:
+            print "File not found!"
+            sys.exit()
+
+        # we use the method Gtk.Application.set_menubar(menubar) to add the menubar
+        # to the application (Note: NOT the window!)
+        self.set_menubar(builder.get_object("menubar"))

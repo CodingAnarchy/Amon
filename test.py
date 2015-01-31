@@ -1,11 +1,11 @@
-from lib import keybase, gpg, gmail
-from lib.gtk import AmonGui
-from pprint import pprint
+import sys
+from gui.gtk import Amon
 
-# keys, csrf = keybase.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
+
+# keys, csrf = amon.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
 
 # Test code for obtaining a user's public key
-# pub_key = keybase.user_pub_key('christopherburg')
+# pub_key = amon.user_pub_key('christopherburg')
 # import_result = gpg.import_keys(pub_key)
 # pprint(import_result.results)
 
@@ -25,7 +25,7 @@ from pprint import pprint
 # dec = gpg.decrypt_msg(enc, pw)
 # print dec
 
-# results = keybase.user_autocomplete('thor')
+# results = amon.user_autocomplete('thor')
 # for u in results:
 #     print u['components']['username']['val']
 
@@ -33,16 +33,17 @@ from pprint import pprint
 # gmail.send_email('mtanous22@gmail.com', ['mtanous22@gmail.com', '<redacted>'], enc)
 # print "Email away!"
 
-# them = keybase.user_lookup('domain', 'christopherburg.com', 'pictures')
+# them = amon.user_lookup('domain', 'christopherburg.com', 'pictures')
 # pprint(them)
 
-# keybase.edit_profile(name="Matt Tanous",
+# amon.edit_profile(name="Matt Tanous",
 #                      bio="Anarchist working to develop a digital end-run around the state.",
 #                      loc='United States')
 
-# keybase.kill_sessions()
+# amon.kill_sessions()
 
 # gmail.auth()
 
-gui = AmonGui()
-gui.main()
+app = Amon()
+exit_status = app.run(sys.argv)
+sys.exit(exit_status)
