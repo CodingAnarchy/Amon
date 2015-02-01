@@ -57,9 +57,8 @@ def password_line(label):
 
 
 def login_dialog(parent):
-    dialog = Gtk.MessageDialog(parent, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                               Gtk.MessageType.QUESTION, Gtk.ButtonsType.OK_CANCEL, "Please enter your password.")
-    dialog.get_image().set_visible(False)
+    dialog = Gtk.Dialog("Please Enter Your Login", parent, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.ButtonsType.OK_CANCEL)
+    # dialog.get_image().set_visible(False)
     current_user, current_user_entry = username_line("Username: ")
     current_user_entry.connect('activate',
                                lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
@@ -75,36 +74,15 @@ def login_dialog(parent):
     dialog.destroy()
     if result != Gtk.ResponseType.CANCEL:
         return user, pw
-
-
-class AmonWindow(Gtk.ApplicationWindow):
-    def show_message(self, msg):
-        show_message(msg, self.window)
-
-    def __init__(self, app):
-        title = APP_NAME + ' v' + AMON_VERSION
-        Gtk.Window.__init__(self, title=title, application=app)
-        self.connect("destroy", Gtk.main_quit)
-        self.set_border_width(0)
-        self.set_default_size(720, 350)
-
-        login_success = False
-        login_attempts = 0
-        while not login_success and login_attempts < 3:
-            user, password = login_dialog(self)
-            try:
-                self.kb_user = KeybaseUser(user, password)
-                login_success = True
-            except LoginError:
-                login_attempts += 1
-                pass
-        if login_attempts == 3:
-            raise LoginError("Attempted keybase login too many times. Aborting.")
+    else:
+        return None, None
 
 
 class Amon(Gtk.Application):
     def __init__(self):
         Gtk.Application.__init__(self, application_id="apps.test.amon")
+        self.kb_user = None
+        self.window = None
         self.connect("activate", self.on_activate)
 
     def on_activate(self, data=None):
@@ -118,14 +96,32 @@ class Amon(Gtk.Application):
             sys.exit()
 
         builder.connect_signals(self)
-        window = builder.get_object("AmonWindow")
+        self.window = builder.get_object("AmonWindow")
         del builder
 
-        window.show()
-        self.add_window(window)
+        self.window.show()
+        self.add_window(self.window)
 
     def gtk_main_quit(self, widget):
         sys.exit()
 
     def do_about(self, widget):
         print "Amon " + AMON_VERSION
+
+    def do_login(self, widget):
+        login_success = False
+        login_attempts = 0
+        while not login_success and login_attempts < 3:
+            user, password = login_dialog(self.window)
+            if user is not None:
+                try:
+                    self.kb_user = KeybaseUser(user, password)
+                    login_success = True
+                except LoginError:
+                    login_attempts += 1
+                    pass
+            else:
+                # TODO: Cancelled out of login - handle appropriately
+                sys.exit()
+        if login_attempts >= 3:
+            raise LoginError("Attempted keybase login too many times. Aborting.")
