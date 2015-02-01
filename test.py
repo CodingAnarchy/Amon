@@ -45,5 +45,5 @@ from gui.gtk import Amon
 # gmail.auth()
 
 app = Amon()
-exit_status = app.run(sys.argv)
+exit_status = app.run()
 sys.exit(exit_status)

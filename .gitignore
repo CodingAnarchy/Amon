@@ -6,4 +6,8 @@
 *.asc
 *.gpg
 
+# Backup files #
+*~
+
+# Miscellaneous IDE files #
 .idea

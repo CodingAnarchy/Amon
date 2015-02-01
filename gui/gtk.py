@@ -104,34 +104,28 @@ class AmonWindow(Gtk.ApplicationWindow):
 
 class Amon(Gtk.Application):
     def __init__(self):
-        Gtk.Application.__init__(self)
+        Gtk.Application.__init__(self, application_id="apps.test.amon")
+        self.connect("activate", self.on_activate)
 
-    def do_activate(self):
-        win = AmonWindow(self)
-        win.show_all()
-
-    def do_startup(self):
-        Gtk.Application.do_startup(self)
-
-        # quit action
-        quit_action = Gio.SimpleAction.new("quit", None)
-        quit_action.connect("activate", self.quit_callback)
-        self.add_action(quit_action)
-
+    def on_activate(self, data=None):
         # a builder to add the UI designed with Glade to the grid
         builder = Gtk.Builder()
         # get the file (if it is there)
         try:
-            builder.add_from_file("gui/menubar_basis.ui")
+            builder.add_from_file("gui/AmonUI.glade")
         except:
             print "File not found!"
             sys.exit()
 
-        # we use the method Gtk.Application.set_menubar(menubar) to add the menubar
-        # to the application (Note: NOT the window!)
-        self.set_menubar(builder.get_object("menubar"))
-        self.set_app_menu(builder.get_object("appmenu"))
+        builder.connect_signals(self)
+        window = builder.get_object("AmonWindow")
+        del builder
 
-    def quit_callback(self, action, parameter):
-        print "You clicked \"Quit\""
+        window.show()
+        self.add_window(window)
+
+    def gtk_main_quit(self, widget):
         sys.exit()
+
+    def do_about(self, widget):
+        print "Amon " + AMON_VERSION
