@@ -2,6 +2,11 @@
 <!-- Generated with glade 3.18.3 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-discard</property>
+  </object>
   <object class="GtkApplicationWindow" id="AmonWindow">
     <property name="can_focus">False</property>
     <property name="border_width">0</property>
@@ -40,7 +45,7 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
-              <object class="GtkMenuItem" id="menuitem1">
+              <object class="GtkMenuItem" id="file_item">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">_File</property>
@@ -71,7 +76,32 @@
               </object>
             </child>
             <child>
-              <object class="GtkMenuItem" id="menuitem2">
+              <object class="GtkMenuItem" id="keybase_item">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Keybase</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="keybase_menu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="_Login">
+                        <property name="label">_Login</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="image">image1</property>
+                        <property name="use_stock">False</property>
+                        <signal name="activate" handler="on_keybase_login" swapped="no"/>
+                        <accelerator key="l" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="help_item">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">_Help</property>
@@ -87,7 +117,8 @@
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="do_about" swapped="no"/>
+                        <signal name="activate" handler="on_about" swapped="no"/>
+                        <accelerator key="a" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                     </child>
                   </object>
@@ -102,28 +133,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkToolbar" id="toolbar1">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <child>
-              <object class="GtkToolButton" id="_Login">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Login</property>
-                <property name="use_underline">True</property>
-                <signal name="clicked" handler="do_login" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">2</property>
-          </packing>
+          <placeholder/>
         </child>
         <child>
           <placeholder/>

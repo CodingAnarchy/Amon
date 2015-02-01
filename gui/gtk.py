@@ -78,77 +78,50 @@ def login_dialog(parent):
         return None, None
 
 
-# class Amon(Gtk.Application):
-#     def __init__(self):
-#         Gtk.Application.__init__(self, application_id="apps.test.amon")
-#         self.kb_user = None
-#         self.window = None
-#         self.connect("activate", self.on_activate)
-#
-#     def on_activate(self, data=None):
-#         # a builder to add the UI designed with Glade to the grid
-#         builder = Gtk.Builder()
-#         # get the file (if it is there)
-#         try:
-#             builder.add_from_file("gui/AmonUI.glade")
-#         except:
-#             print "File not found!"
-#             sys.exit()
-#
-#         builder.connect_signals(self)
-#         self.window = builder.get_object("AmonWindow")
-#         del builder
-#
-#         self.window.show()
-#         self.add_window(self.window)
-#
-#     def gtk_main_quit(self, widget):
-#         sys.exit()
-
-
-class AmonWindow(Gtk.Window):
-    def show_message(self, msg):
-        show_message(msg, self.window)
-
-    def on_key(self, w, event):
-        if Gdk.ModifierType.CONTROL_MASK & event.state and event.keyval in [113, 119]:
-            Gtk.main_quit()
-        return True
-
+class Amon(Gtk.Application):
     def __init__(self):
+        Gtk.Application.__init__(self, application_id="apps.test.amon")
         self.keybase_user = None
-        self.email_type = 'Gmail'
-        self.email_user = None
+        self.window = None
+        self.connect("activate", self.on_activate)
 
-        title = APP_NAME + ' v' + AMON_VERSION
-        self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL, title=title)
-        self.window.connect("destroy", Gtk.main_quit)
-        self.window.connect("key-press-event", self.on_key)
-        self.window.set_border_width(0)
-        self.window.set_default_size(720, 350)
+    def on_activate(self, data=None):
+        # a builder to add the UI designed with Glade to the grid
+        builder = Gtk.Builder()
+        # get the file (if it is there)
+        try:
+            builder.add_from_file("gui/AmonUI.glade")
+        except:
+            print "File not found!"
+            sys.exit()
 
-        vbox = Gtk.VBox()
+        builder.connect_signals(self)
+        self.window = builder.get_object("AmonWindow")
+        del builder
 
-        self.status_bar = Gtk.Statusbar()
-        vbox.pack_start(self.status_bar, False, False, 0)
+        self.window.show()
+        self.add_window(self.window)
 
-        # self.status_image = Gtk.Image()
-        # self.status_image.set_from_stock(Gtk.STOCK_NO, Gtk.IconSize.MENU)
-        # self.status_image.set_alignment(True, 0.5)
-        # self.status_image.show()
+    def gtk_main_quit(self, widget):
+        sys.exit()
 
-        self.login_button = Gtk.Button()
-        login_label = Gtk.Label("_Login", use_underline=True)
-        self.login_button.connect("clicked", lambda x: self.login())
-        self.login_button.add(login_label)
-        self.login_button.set_relief(Gtk.ReliefStyle.NONE)
-        self.login_button.show()
-        self.status_bar.pack_start(self.login_button, False, False, 0)
+    def on_about(self, widget):
+        about_dialog = Gtk.AboutDialog()
 
-        self.window.add(vbox)
-        self.window.show_all()
+        authors = ["Matt Tanous"]
 
-    def login(self):
+        about_dialog.set_program_name("Amon " + AMON_VERSION)
+        about_dialog.set_authors(authors)
+        about_dialog.set_website("https://github.com/CodingAnarchy/Amon")
+        about_dialog.set_website_label("GitHub Source Code Repository")
+
+        about_dialog.connect("response", self.on_close)
+        about_dialog.show()
+
+    def on_close(self, action, parameter):
+        action.destroy()
+
+    def on_keybase_login(self, widget):
         login_success = False
         login_attempts = 0
         while not login_success and login_attempts < 3:
@@ -165,13 +138,3 @@ class AmonWindow(Gtk.Window):
                 sys.exit()
         if login_attempts >= 3:
             raise LoginError("Attempted keybase login too many times. Aborting.")
-
-
-class AmonGui:
-    def __init__(self):
-        self.window = AmonWindow()
-
-    def main(self):
-        # TODO - handle start up details
-
-        Gtk.main()
