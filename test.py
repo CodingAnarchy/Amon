@@ -1,5 +1,5 @@
 import sys
-from gui.gtk import Amon
+from gui.gtk import AmonGui
 
 
 # keys, csrf = amon.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
@@ -44,6 +44,5 @@ from gui.gtk import Amon
 
 # gmail.auth()
 
-app = Amon()
-exit_status = app.run()
-sys.exit(exit_status)
+gui = AmonGui()
+gui.main()
