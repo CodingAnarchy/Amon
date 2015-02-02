@@ -48,7 +48,7 @@ def get_salt(user):
 
 
 def login(user, pw):
-    print "Logging in..."
+    # print "Logging in..."
     global session
     salt, session_id = get_salt(user)
     login_url = kb_url + 'login.json'
@@ -62,7 +62,7 @@ def login(user, pw):
             raise LoginError("Incorrect login information: " + str(data["status"]["desc"]) + '!')
         raise KeybaseError("Login attempt error: " + str(data["status"]["name"]) +
                            '\nDescription: ' + str(data["status"]["desc"]))
-    print "Logged in!"
+    # print "Logged in!"
     session = Session(data['session'], data['csrf_token'])
     return data['me']
 

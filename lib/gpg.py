@@ -9,6 +9,21 @@ system('rm -rf /home/testgpguser/gpghome')
 gpg = gnupg.GPG(gnupghome='/home/testgpguser/gpghome')
 
 
+def gen_key(**kwargs):
+    print "Generating key..."
+    name = "default user"
+    email = "default email"
+    if 'name_real' in kwargs:
+        name = kwargs['name_real']
+    if 'name_email' in kwargs:
+        email = kwargs['name_email']
+
+    input_data = gpg.gen_key_input(**kwargs)
+    new_key = gpg.gen_key(input_data)
+    print "Key generated for " + name + " with " + email
+    return new_key
+
+
 def import_keys(keys):
     print "Importing keys..."
     result = None

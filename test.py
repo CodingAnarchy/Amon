@@ -1,5 +1,6 @@
 import sys
 from gui.gtk import Amon
+from lib import gpg
 
 
 # keys, csrf = amon.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
@@ -44,6 +45,10 @@ from gui.gtk import Amon
 
 # gmail.auth()
 
-app = Amon()
-response = app.run()
+# app = Amon()
+# response = app.run()
+# sys.exit(response)
+
+new_key = gpg.gen_key()
+print new_key
 
