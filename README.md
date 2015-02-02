@@ -22,6 +22,7 @@ Able to use GnuPG to do encryption related tasks
 * sign a message and verify signatures
 * import and export public and private keys
 * list keys in keyring
+* generate new key for user
     
 Able to work with Gmail
 
