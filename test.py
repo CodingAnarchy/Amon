@@ -12,19 +12,13 @@ from lib import gpg
 
 # print gpg.list_keys(True)
 
-# test = gpg.export_keys(to)
-# print test
-
-# enc = gpg.encrypt_msg('A simple test of encryption with downloaded keys!', to)
-# print enc
-
 # sign = gpg.sign_msg('A simple test of signing a message!')
 # print sign
 #
 # verified = gpg.verify_msg(sign)
 
-# dec = gpg.decrypt_msg(enc, pw)
-# print dec
+# test = gpg.export_keys(to)
+# print test
 
 # results = amon.user_autocomplete('thor')
 # for u in results:
@@ -49,8 +43,18 @@ from lib import gpg
 # response = app.run()
 # sys.exit(response)
 
-new_key = gpg.gen_key(name_real='Matt Tanous', name_email='mtanous22@gmail.com')
+new_key = gpg.gen_key(name_real='Matt Tanous', name_email='mtanous22@gmail.com', passphrase='test')
 print new_key
+
+with open('test.txt', 'rb') as f:
+    enc = gpg.encrypt_msg(f, 'mtanous22@gmail.com')
+
+with open('enc_msg.gpg', 'rb') as f:
+    dec = gpg.decrypt_msg(f, 'test')
+
+with open('dec_msg.txt', 'rb') as f:
+    msg = f.read()
+    print msg
 
 gpg.delete_keys(new_key)
 

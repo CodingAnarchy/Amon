@@ -64,15 +64,15 @@ def list_keys(sec=False):
 
 
 def encrypt_msg(msg, to):
-    print "Encrypting msg..."
+    print "Encrypting message..."
     enc_str = None
     if isinstance(msg, file):
         with msg:
             # TODO: put output file in same path as input file
-            status = gpg.encrypt_file(msg, recipients=to, always_trust=True, output='enc_msg.txt')
+            status = gpg.encrypt_file(msg, recipients=to, always_trust=True, output='enc_msg.gpg')
             if not status.ok:
                 raise Exception("GPG encryption error: \nstatus: " + status.status + '\nstderr: ' + status.stderr)
-            with open('enc_msg.txt', 'rb') as enc:
+            with open('enc_msg.gpg', 'rb') as enc:
                 enc_str = enc.read()
                 # TODO: Query user for deletion of original and/or encrypted file, if desired
     else:
@@ -89,14 +89,13 @@ def encrypt_msg(msg, to):
 def decrypt_msg(enc, pw):
     print "Decrypting message..."
     if isinstance(enc, file):
-        # TODO: Decrypt file path
-        return None
+        msg = gpg.decrypt_file(enc, passphrase=pw, always_trust=True, output='dec_msg.txt')
     else:
         # treat enc as encrypted string
         msg = gpg.decrypt(enc, passphrase=pw, always_trust=True)
-        if not msg.ok:
-            raise Exception("GPG decryption error: \nstatus: " + msg.status + '\nstderr: ' + msg.stderr)
-        return msg.data
+    if not msg.ok:
+        raise Exception("GPG decryption error: \nstatus: " + msg.status + '\nstderr: ' + msg.stderr)
+    return msg.data
 
 
 def sign_msg(msg, keyid=None, detach=False, output=None):
@@ -109,7 +108,6 @@ def verify_msg(msg):
     if not verified:
         raise ValueError("Signature could not be verified!")
     print "Signature verified!"
-    return True
 
 
 def delete_keys(key):
