@@ -2,11 +2,14 @@
 *.pyc
 
 
-# Exported GPG key files #
+# Exported GPG Key Files #
 *.asc
 *.gpg
 
-# Backup files #
+# Text Files #
+*.txt
+
+# Backup Files #
 *~
 
 # Miscellaneous IDE files #
