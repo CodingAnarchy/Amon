@@ -37,36 +37,6 @@ def signup(name, email, uname, pw, invite):
     return
 
 
-def get_salt(user):
-    gs_url = kb_url + 'getsalt.json'
-    r = requests.get(gs_url, params={'email_or_username': user})
-    data = json.loads(r.text)
-    if data["status"]["code"] != 0:
-        raise KeybaseError("Attempt to get salt error: " + str(data["status"]["name"]) +
-                           '\nDescription: ' + str(data["status"]["desc"]))
-    return data["salt"], data["login_session"]
-
-
-def login(user, pw):
-    # print "Logging in..."
-    global session
-    salt, session_id = get_salt(user)
-    login_url = kb_url + 'login.json'
-    pwh = scrypt.hash(pw, unhexlify(salt), 2**15, 8, 1, 224)[192:224]
-    hmac_pwh = hmac.new(pwh, b64decode(session_id), sha512)
-    r = requests.post(login_url, data={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(),
-                                       'login_session': session_id})
-    data = json.loads(r.text)
-    if data["status"]["code"] != 0:
-        if str(data["status"]["name"]) in ["BAD_LOGIN_PASSWORD", "BAD_LOGIN_USER_NOT_FOUND"]:
-            raise LoginError("Incorrect login information: " + str(data["status"]["desc"]) + '!')
-        raise KeybaseError("Login attempt error: " + str(data["status"]["name"]) +
-                           '\nDescription: ' + str(data["status"]["desc"]))
-    # print "Logged in!"
-    session = Session(data['session'], data['csrf_token'])
-    return data['me']
-
-
 # Look up users on Keybase.io
 def user_lookup(ltype, users, fields):
     ul_url = kb_url + 'user/lookup.json'
@@ -251,14 +221,41 @@ def kill_sessions():
 
 
 class KeybaseUser:
-    def __init__(self, user, pw):
-        self.ts = triplesec.TripleSec(key=pw)
-        me = login(user, pw)
-        self.pub_key = me['public_keys']['primary']['bundle']
-        self.enc_sec_key = me['private_keys']['primary']['bundle']
+    def __init__(self):
+        self.ts = None
+        self.pub_key = None
+        self.enc_sec_key = None
+        self.session = None
 
     def get_pub_key(self):
         return self.pub_key
 
     def get_sec_key(self):
         return decode_priv_key(self.enc_sec_key, self.ts)
+
+    def get_salt(self, user):
+        gs_url = kb_url + 'getsalt.json'
+        r = requests.get(gs_url, params={'email_or_username': user})
+        data = json.loads(r.text)
+        if data["status"]["code"] != 0:
+            raise KeybaseError("Attempt to get salt error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
+        return data["salt"], data["login_session"]
+
+    def login(self, user, pw):
+        # print "Logging in..."
+        salt, session_id = self.get_salt(user)
+        login_url = kb_url + 'login.json'
+        pwh = scrypt.hash(pw, unhexlify(salt), 2**15, 8, 1, 224)[192:224]
+        hmac_pwh = hmac.new(pwh, b64decode(session_id), sha512)
+        r = requests.post(login_url, data={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(),
+                                           'login_session': session_id})
+        data = json.loads(r.text)
+        if data["status"]["code"] != 0:
+            if str(data["status"]["name"]) in ["BAD_LOGIN_PASSWORD", "BAD_LOGIN_USER_NOT_FOUND"]:
+                raise LoginError("Incorrect login information: " + str(data["status"]["desc"]) + '!')
+            raise KeybaseError("Login attempt error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
+        # print "Logged in!"
+        self.session = Session(data['session'], data['csrf_token'])
+        return data['me']

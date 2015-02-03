@@ -81,7 +81,7 @@ def login_dialog(parent):
 class Amon(Gtk.Application):
     def __init__(self):
         Gtk.Application.__init__(self, application_id="apps.test.amon")
-        self.keybase_user = None
+        self.keybase_user = KeybaseUser()
         self.window = None
         self.connect("activate", self.on_activate)
 
@@ -131,7 +131,7 @@ class Amon(Gtk.Application):
             user, password = login_dialog(self.window)
             if user is not None:
                 try:
-                    self.keybase_user = KeybaseUser(user, password)
+                    self.keybase_user.login(user, password)
                     login_success = True
                 except LoginError:
                     login_attempts += 1
