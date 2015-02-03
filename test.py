@@ -52,3 +52,5 @@ from lib import gpg
 new_key = gpg.gen_key(name_real='Matt Tanous', name_email='mtanous22@gmail.com')
 print new_key
 
+gpg.delete_keys(new_key)
+

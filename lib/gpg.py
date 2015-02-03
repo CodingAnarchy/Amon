@@ -110,3 +110,16 @@ def verify_msg(msg):
         raise ValueError("Signature could not be verified!")
     print "Signature verified!"
     return True
+
+
+def delete_keys(key):
+    fp = key.fingerprint
+    print "Deleting key with fingerprint " + fp
+    if str(gpg.delete_keys(fp)) == 'Must delete secret key first':
+        status = gpg.delete_keys(fp, True)
+        if str(status) != 'ok':
+            raise Exception("Deleting secret key " + fp + " failed.")
+        status = gpg.delete_keys(fp)
+        if str(status) != 'ok':
+            raise Exception("Deleting public key " + fp + " failed.")
+    print "Key with fingerprint " + fp + " deleted successfully."
