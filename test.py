@@ -21,7 +21,7 @@ from lib import gpg
 # sign = gpg.sign_msg('A simple test of signing a message!')
 # print sign
 #
-# gpg.verify_msg(sign)
+# verified = gpg.verify_msg(sign)
 
 # dec = gpg.decrypt_msg(enc, pw)
 # print dec
@@ -49,6 +49,6 @@ from lib import gpg
 # response = app.run()
 # sys.exit(response)
 
-new_key = gpg.gen_key()
+new_key = gpg.gen_key(name_real='Matt Tanous', name_email='mtanous22@gmail.com')
 print new_key
 

@@ -256,3 +256,9 @@ class KeybaseUser:
         me = login(user, pw)
         self.pub_key = me['public_keys']['primary']['bundle']
         self.enc_sec_key = me['private_keys']['primary']['bundle']
+
+    def get_pub_key(self):
+        return self.pub_key
+
+    def get_sec_key(self):
+        return decode_priv_key(self.enc_sec_key, self.ts)
