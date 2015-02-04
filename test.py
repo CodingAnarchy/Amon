@@ -39,22 +39,22 @@ from lib import gpg
 
 # gmail.auth()
 
-# app = Amon()
-# response = app.run()
-# sys.exit(response)
+app = Amon()
+response = app.run()
+sys.exit(response)
 
-new_key = gpg.gen_key(name_real='Matt Tanous', name_email='mtanous22@gmail.com', passphrase='test')
-print new_key
-
-with open('test.txt', 'rb') as f:
-    enc = gpg.encrypt_msg(f, 'mtanous22@gmail.com')
-
-with open('enc_msg.gpg', 'rb') as f:
-    dec = gpg.decrypt_msg(f, 'test')
-
-with open('dec_msg.txt', 'rb') as f:
-    msg = f.read()
-    print msg
-
-gpg.delete_keys(new_key)
+# new_key = gpg.gen_key(name_real='Matt Tanous', name_email='mtanous22@gmail.com', passphrase='test')
+# print new_key
+#
+# with open('test.txt', 'rb') as f:
+#     enc = gpg.encrypt_msg(f, 'mtanous22@gmail.com')
+#
+# with open('enc_msg.gpg', 'rb') as f:
+#     dec = gpg.decrypt_msg(f, 'test')
+#
+# with open('dec_msg.txt', 'rb') as f:
+#     msg = f.read()
+#     print msg
+#
+# gpg.delete_keys(new_key)
 

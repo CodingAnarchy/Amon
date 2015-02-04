@@ -1,6 +1,7 @@
 from lib.version import AMON_VERSION
 from lib.keybase import KeybaseUser
 from lib.error import LoginError
+from lib.utils import zero_out
 import sys
 import gi
 gi.require_version('Gtk', '3.0')
@@ -125,6 +126,7 @@ class Amon(Gtk.Application):
     def on_keybase_login(self, widget):
         login_success = False
         login_attempts = 0
+        user = None
         context_id = self.window.status_bar.get_context_id("login")
         self.window.status_bar.push(context_id, "Logging in...")
         while not login_success and login_attempts < 3:
@@ -136,6 +138,8 @@ class Amon(Gtk.Application):
                 except LoginError:
                     login_attempts += 1
                     pass
+                finally:
+                    zero_out(password)  # Shouldn't be necessary, but just to make sure
             else:
                 # TODO: Cancelled out of login - handle appropriately
                 sys.exit()

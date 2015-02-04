@@ -11,7 +11,7 @@ import requests
 import scrypt
 import triplesec
 
-from .utils import comma_sep_list
+from utils import *
 from error import *
 
 # from pprint import pprint
@@ -247,6 +247,9 @@ class KeybaseUser:
         salt, session_id = self.get_salt(user)
         login_url = kb_url + 'login.json'
         pwh = scrypt.hash(pw, unhexlify(salt), 2**15, 8, 1, 224)[192:224]
+        # print "Password was " + pw
+        zero_out(pw)
+        # print "Password in memory location is now " + pw
         hmac_pwh = hmac.new(pwh, b64decode(session_id), sha512)
         r = requests.post(login_url, data={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(),
                                            'login_session': session_id})

@@ -1,6 +1,8 @@
 # General utility library
 from re import match
 import inspect
+import sys
+import ctypes
 
 
 def comma_sep_list(lst):
@@ -18,3 +20,14 @@ def comma_sep_list(lst):
     elif not match(r'(\w+,)?\w+', lst):
         raise Exception("User list not properly formatted: expected list or comma separated string")
     return lst
+
+
+def zero_out(string):
+    temp = "finding offset"
+    header = ctypes.string_at(id(temp), sys.getsizeof(temp)).find(temp)
+
+    loc = id(string) + header
+    size = sys.getsizeof(string) - header
+
+    print "Clearing 0x%08x size %i bytes" % (loc, size)
+    ctypes.memset(loc, 0, size)
