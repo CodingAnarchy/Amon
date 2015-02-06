@@ -20,6 +20,13 @@ def show_message(message, parent=None):
     dialog.destroy()
 
 
+def add_help_button(hbox, message):
+    button = Gtk.Button('?')
+    button.connect("clicked", lambda x: show_message(message))
+    button.show()
+    hbox.pack_start(button, False, False, 0)
+
+
 def username_line(label):
     username = Gtk.HBox()
 
@@ -119,6 +126,49 @@ class Amon(Gtk.Application):
 
         about_dialog.connect("response", self.on_close)
         about_dialog.show()
+
+    def on_pref(self, widget):
+        message = "Here are the current settings. For more explanation, " \
+                  "click on the question mark buttons next to the input field."
+
+        dialog = Gtk.MessageDialog(parent=self.window, flags=Gtk.DialogFlags.MODAL,
+                                   buttons=Gtk.ButtonsType.OK_CANCEL, message_format=message)
+
+        image = Gtk.Image()
+        image.set_from_stock(Gtk.STOCK_PREFERENCES, Gtk.IconSize.DIALOG)
+        image.show()
+        dialog.set_image(image)
+        dialog.set_title(APP_NAME + " Preferences")
+
+        vbox = dialog.vbox
+        dialog.set_default_response(Gtk.ResponseType.OK)
+
+        addr = Gtk.HBox()
+        addr_entry = Gtk.Entry()
+        addr_label = Gtk.Label(label='Email address:')
+        addr_label.set_size_request(150, 10)
+        addr_label.show()
+        addr.pack_start(addr_label, False, False, 10)
+        addr_entry.set_text("")
+        addr_entry.connect('activate',
+                           lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
+        addr_entry.show()
+        addr.pack_start(addr_entry, False, False, 10)
+        add_help_button(addr,
+                        "Email address for sending and receiving encrypted emails. (Currently only supports Gmail.)")
+        addr.show()
+        vbox.pack_start(addr, False, False, 5)
+
+        dialog.show()
+        r = dialog.run()
+        address = addr_entry.get_text()
+        print address
+
+        dialog.destroy()
+        if r == Gtk.ResponseType.CANCEL:
+            return
+
+        print "OK was pressed!"
 
     def on_close(self, action, parameter):
         action.destroy()
