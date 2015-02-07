@@ -1,5 +1,6 @@
 # Keybase API interface module
 import json
+import logging
 from binascii import unhexlify
 import hmac
 from hashlib import sha512
@@ -20,6 +21,7 @@ from warnings import warn
 
 kb_url = 'https://keybase.io/_/api/1.0/'
 Session = namedtuple('session', 'id csrf')
+logger = logging.getLogger(__name__)
 
 
 # Currently requires invitation id - don't use yet
@@ -81,7 +83,7 @@ def user_autocomplete(user):
 
 
 def user_pub_key(user):
-    print "Obtaining public key for " + user
+    logger.info("Obtaining public key for " + user)
     uk_url = 'https://keybase.io/' + user + '/key.asc'
     r = requests.get(uk_url)
     if r.text == "404":
@@ -90,7 +92,7 @@ def user_pub_key(user):
 
 
 def key_fetch(key_ids, ops=None):
-    print "Fetching keys..."
+    logger.info("Fetching keys...")
     kf_url = kb_url + 'key/fetch.json'
     key_ids = comma_sep_list(key_ids)
     opt = 0x00
@@ -211,6 +213,7 @@ def discover_users(lookups, usernames_only=False, flatten=False):
 
 
 def kill_sessions():
+    logger.info("Ending sessions...")
     ks_url = kb_url + 'session/killall.json'
     r = requests.post(ks_url, data={'session': session.id, 'csrf_token': session.csrf})
     data = json.loads(r.text)

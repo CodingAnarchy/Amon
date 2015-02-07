@@ -1,5 +1,6 @@
 # GPG utility library
 from os import system
+import logging
 
 import gnupg
 
@@ -7,6 +8,7 @@ import gnupg
 # clean GPG test directory on startup before proceeding with test
 system('rm -rf /home/testgpguser/gpghome')
 gpg = gnupg.GPG(gnupghome='/home/testgpguser/gpghome')
+logger = logging.getLogger(__name__)
 
 
 def gen_key(**kwargs):
@@ -19,7 +21,7 @@ def gen_key(**kwargs):
     expire_date (ISO date, number of days/weeks/monts/years, epoch value, or 0 for 'never')
     passphrase (default None)
     """
-    print "Generating key..."
+    logger.info("Generating key...")
     name = "default user"
     email = "default email"
     if 'name_real' in kwargs:
@@ -29,12 +31,12 @@ def gen_key(**kwargs):
 
     input_data = gpg.gen_key_input(**kwargs)
     new_key = gpg.gen_key(input_data)
-    print "Key generated for " + name + " with " + email
+    logger.info("Key generated for " + name + " with " + email)
     return new_key
 
 
 def import_keys(keys):
-    print "Importing keys..."
+    logger.info("Importing keys...")
     result = None
     if isinstance(keys, basestring):
         result = gpg.import_keys(keys)
@@ -64,7 +66,7 @@ def list_keys(sec=False):
 
 
 def encrypt_msg(msg, to):
-    print "Encrypting message..."
+    logger.info("Encrypting message...")
     enc_str = None
     if isinstance(msg, file):
         with msg:
@@ -87,7 +89,7 @@ def encrypt_msg(msg, to):
 
 
 def decrypt_msg(enc, pw):
-    print "Decrypting message..."
+    logger.info("Decrypting message...")
     if isinstance(enc, file):
         msg = gpg.decrypt_file(enc, passphrase=pw, always_trust=True, output='dec_msg.txt')
     else:
@@ -107,12 +109,12 @@ def verify_msg(msg):
     verified = gpg.verify(msg)
     if not verified:
         raise ValueError("Signature could not be verified!")
-    print "Signature verified!"
+    logger.info("Signature verified!")
 
 
 def delete_keys(key):
     fp = key.fingerprint
-    print "Deleting key with fingerprint " + fp
+    logger.info("Deleting key with fingerprint " + fp)
     if str(gpg.delete_keys(fp)) == 'Must delete secret key first':
         status = gpg.delete_keys(fp, True)
         if str(status) != 'ok':
@@ -120,4 +122,4 @@ def delete_keys(key):
         status = gpg.delete_keys(fp)
         if str(status) != 'ok':
             raise Exception("Deleting public key " + fp + " failed.")
-    print "Key with fingerprint " + fp + " deleted successfully."
+    logger.info("Key with fingerprint " + fp + " deleted successfully.")

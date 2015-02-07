@@ -3,6 +3,9 @@ from re import match
 import inspect
 import sys
 import ctypes
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def comma_sep_list(lst):
@@ -29,5 +32,5 @@ def zero_out(string):
     loc = id(string) + header
     size = sys.getsizeof(string) - header
 
-    print "Clearing 0x%08x size %i bytes" % (loc, size)
+    logger.info("Clearing 0x%08x size %i bytes" % (loc, size))
     ctypes.memset(loc, 0, size)

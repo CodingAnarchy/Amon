@@ -9,10 +9,12 @@ import datetime
 import re
 import quopri
 import pprint
+import logging
 from HTMLParser import HTMLParser
 
 gm_header_re = re.compile("^(\d+) \(X-GM-THRID (\d+) X-GM-MSGID (\d+) X-GM-LABELS "
                           "\(([^\)]*)\) UID (\d+) RFC822 {(\d+)}$")
+logger = logging.getLogger(__name__)
 
 
 def parse_email(full_msg):
@@ -84,7 +86,7 @@ def make_query():
 
 def auth():
     imapquery = make_query()
-    print "IMAP query is " + imapquery
+    logger.info("IMAP query is " + imapquery)
     # No proxy - requires changes for proxy ('localhost', <forwarded port>)
     mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
     user = raw_input("Please enter your email address: ")
@@ -94,8 +96,7 @@ def auth():
     mail.select('"[Gmail]/All Mail"')  # connect to "All Mail" folder
     status, data = mail.uid('search', None, imapquery)
     results = data[0].split()
-    print results
-    print "IMAP Server returned " + str(len(results)) + " results"
+    logger.info("IMAP Server returned " + str(len(results)) + " results")
     pp = pprint.PrettyPrinter(indent=4)
     print pp.pformat([parse_email(fetch_email(mail, i))['body'] for i in results])
 

@@ -9,6 +9,10 @@
 # Text Files #
 *.txt
 
+# Config/Log Files #
+*.conf
+*.log
+
 # Backup Files #
 *~
 
