@@ -1,60 +1,17 @@
 import sys
 from gui.gtk import Amon
 from lib import gpg
+import json
 import logging
 import logging.config
 
 logger = logging.getLogger(__name__)
 
-logging.config.dictConfig({
-    'version': 1,
-    'disable_existing_loggers': False,
+with open('logging.json', 'r') as f:
+    data = f.read()
+    conf = json.loads(data)
 
-    'formatters': {
-        "simple": {
-            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        }
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "level": "DEBUG",
-            "formatter": "simple",
-            "stream": "ext://sys.stdout"
-        },
-
-        "info_handler": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "level": "INFO",
-            "formatter": "simple",
-            "filename": "info.log",
-            "maxBytes": 10485760,
-            "backupCount": 20,
-            "encoding": "utf8"
-        },
-
-        "error_handler": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "level": "ERROR",
-            "formatter": "simple",
-            "filename": "errors.log",
-            "maxBytes": 10485760,
-            "backupCount": 20,
-            "encoding": "utf8"
-        }
-    },
-    'loggers': {
-        '': {
-            'handlers': ['console', 'info_handler', 'error_handler'],
-            'level': 'INFO',
-            'propagate': True
-        }
-    },
-    "root": {
-        "level": "INFO",
-        "handlers": ["console", "info_handler", "error_handler"]
-    }
-})
+logging.config.dictConfig(conf)
 
 
 # keys, csrf = amon.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
