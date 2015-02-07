@@ -2,14 +2,19 @@ from lib.version import AMON_VERSION
 from lib.keybase import KeybaseUser
 from lib.error import LoginError
 from lib.utils import zero_out
+import lib.gpg as gpg
+
 import sys
+import json
+import logging
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, Gio
+from gi.repository import Gtk
 
 APP_NAME = "Amon"
 import platform
 MONOSPACE_FONT = "Lucida Console" if platform.system() == 'Windows' else 'monospace'
+logger = logging.getLogger(__name__)
 
 
 def show_message(message, parent=None):
@@ -86,14 +91,33 @@ def login_dialog(parent):
         return None, None
 
 
+def passphrase_dialog(parent):
+    dialog = Gtk.Dialog("Please Enter Your GPG Passphrase", parent, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.ButtonsType.OK_CANCEL)
+    # dialog.get_image().set_visible(False)
+    current_pw, current_pw_entry = password_line("Passphrase: ")
+    current_pw_entry.connect("activate",
+                             lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
+    dialog.vbox.pack_start(current_pw, False, True, 0)
+    dialog.show()
+    result = dialog.run()
+    pw = current_pw_entry.get_text()
+    dialog.destroy()
+    if result != Gtk.ResponseType.CANCEL:
+        return pw
+    else:
+        return None
+
+
 class Amon(Gtk.Application):
     def __init__(self):
         Gtk.Application.__init__(self, application_id="apps.test.amon")
         self.keybase_user = KeybaseUser()
+        self.config = {}
         self.window = None
         self.connect("activate", self.on_activate)
 
     def on_activate(self, data=None):
+        logger.info("Starting up...")
         # a builder to add the UI designed with Glade to the grid
         builder = Gtk.Builder()
         # get the file (if it is there)
@@ -110,6 +134,19 @@ class Amon(Gtk.Application):
 
         self.window.show()
         self.add_window(self.window)
+
+        passphrase = passphrase_dialog(self.window)
+        try:
+            with open('amon.conf', 'r') as f:
+                data = gpg.decrypt_msg(f.read(), passphrase)
+                self.config = json.loads(data)
+        except IOError:
+            self.config = {'keybase_user': '', 'keybase_pw': '', 'email_addr': '', 'email_pw': ''}
+        finally:
+            zero_out(passphrase)
+
+        if not self.config['keybase_user'] == '' and not self.config['keybase_pw'] == '':
+            self.keybase_user.login(config['keybase_user'], config['keybase_pw'])
 
     def gtk_main_quit(self, widget):
         sys.exit()
@@ -128,7 +165,7 @@ class Amon(Gtk.Application):
         about_dialog.show()
 
     def on_pref(self, widget):
-        message = "Here are the current settings. For more explanation, " \
+        message = "Here are the current settings (stored as encrypted data in amon.conf). For more explanation, " \
                   "click on the question mark buttons next to the input field."
 
         dialog = Gtk.MessageDialog(parent=self.window, flags=Gtk.DialogFlags.MODAL,
@@ -142,6 +179,37 @@ class Amon(Gtk.Application):
 
         vbox = dialog.vbox
         dialog.set_default_response(Gtk.ResponseType.OK)
+
+        kb_user = Gtk.HBox()
+        kb_user_entry = Gtk.Entry()
+        kb_user_label = Gtk.Label(label='Keybase Username:')
+        kb_user_label.set_size_request(150, 10)
+        kb_user_label.show()
+        kb_user.pack_start(kb_user_label, False, False, 10)
+        kb_user_entry.set_text(self.config['keybase_user'])
+        kb_user_entry.connect('activate',
+                              lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
+        kb_user_entry.show()
+        kb_user.pack_start(kb_user_entry, False, False, 10)
+        add_help_button(kb_user, "Keybase User ID")
+        kb_user.show()
+        vbox.pack_start(kb_user, False, False, 5)
+
+        kb_pw = Gtk.HBox()
+        kb_pw_entry = Gtk.Entry()
+        kb_pw_entry.set_visibility(False)
+        kb_pw_label = Gtk.Label(label='New Keybase Password:')
+        kb_pw_label.set_size_request(150, 10)
+        kb_pw_label.show()
+        kb_pw.pack_start(kb_pw_label, False, False, 10)
+        kb_pw_entry.set_text("")
+        kb_pw_entry.connect('activate',
+                            lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
+        kb_pw_entry.show()
+        kb_pw.pack_start(kb_pw_entry, False, False, 10)
+        add_help_button(kb_pw, "Enter Keybase Password")
+        kb_pw.show()
+        vbox.pack_start(kb_pw, False, False, 5)
 
         addr = Gtk.HBox()
         addr_entry = Gtk.Entry()
@@ -161,14 +229,21 @@ class Amon(Gtk.Application):
 
         dialog.show()
         r = dialog.run()
-        address = addr_entry.get_text()
-        print address
 
+        keybase_user = kb_user_entry.get_text()
+        keybase_pw = kb_pw_entry.get_text()
+        address = addr_entry.get_text()
         dialog.destroy()
         if r == Gtk.ResponseType.CANCEL:
+            zero_out(keybase_pw)
             return
 
-        print "OK was pressed!"
+        self.config['keybase_user'] = keybase_user
+        self.config['email_address'] = address
+        zero_out(keybase_pw)
+        logger.debug("Set keybase user to " + keybase_user)
+        logger.debug("Set email address to " + address)
+        logger.info("Updated preference settings.")
 
     def on_close(self, action, parameter):
         action.destroy()
