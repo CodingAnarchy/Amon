@@ -162,29 +162,6 @@ def decode_priv_key(obj, ts):
 #     # enc = enc['body']['priv']['data']
 #     return obj
 
-def edit_profile(bio=None, loc=None, name=None):
-    print "Updating profile..."
-    ep_url = kb_url + 'profile-edit.json'
-    params = {}
-    if bio is not None:
-        params['bio'] = bio
-    if name is not None:
-        params['full_name'] = name
-    if loc is not None:
-        params['location'] = loc
-    if not params:
-        raise Exception("Editing keybase profile requires at least one parameter: name, bio, or location.")
-    params['csrf_token'] = session.csrf
-    params['session'] = session.id
-    r = requests.post(ep_url, data=params)
-    data = json.loads(r.text)
-    if data['status']['code'] != 0:
-        raise KeybaseError("Attempt to edit keybase profile error: " + str(data["status"]["name"]) +
-                           '\nDescription: ' + str(data["status"]["desc"]))
-    if data['csrf_token'] != session.csrf:
-        raise CSRFError(session.csrf, data['csrf_token'])
-    return
-
 
 def discover_users(lookups, usernames_only=False, flatten=False):
     kd_url = kb_url + 'user/discover.json'
@@ -212,17 +189,6 @@ def discover_users(lookups, usernames_only=False, flatten=False):
     return data
 
 
-def kill_sessions():
-    logger.info("Ending sessions...")
-    ks_url = kb_url + 'session/killall.json'
-    r = requests.post(ks_url, data={'session': session.id, 'csrf_token': session.csrf})
-    data = json.loads(r.text)
-    if data['status']['code'] != 0:
-        raise KeybaseError("Attempt to kill user login sessions error: " + str(data["status"]["name"]) +
-                           '\nDescription: ' + str(data["status"]["desc"]))
-    return
-
-
 class KeybaseUser:
     def __init__(self):
         self.ts = None
@@ -235,6 +201,28 @@ class KeybaseUser:
 
     def get_sec_key(self):
         return decode_priv_key(self.enc_sec_key, self.ts)
+
+    def edit_profile(self, bio=None, loc=None, name=None):
+        print "Updating profile..."
+        ep_url = kb_url + 'profile-edit.json'
+        params = {}
+        if bio is not None:
+            params['bio'] = bio
+        if name is not None:
+            params['full_name'] = name
+        if loc is not None:
+            params['location'] = loc
+        if not params:
+            raise Exception("Editing keybase profile requires at least one parameter: name, bio, or location.")
+        params['csrf_token'] = self.session.csrf
+        params['session'] = self.session.id
+        r = requests.post(ep_url, data=params)
+        data = json.loads(r.text)
+        if data['status']['code'] != 0:
+            raise KeybaseError("Attempt to edit keybase profile error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
+        if data['csrf_token'] != self.session.csrf:
+            raise CSRFError(self.session.csrf, data['csrf_token'])
 
     def get_salt(self, user):
         gs_url = kb_url + 'getsalt.json'
@@ -265,3 +253,12 @@ class KeybaseUser:
         # print "Logged in!"
         self.session = Session(data['session'], data['csrf_token'])
         return data['me']
+
+    def kill_sessions(self):
+        logger.info("Ending sessions...")
+        ks_url = kb_url + 'session/killall.json'
+        r = requests.post(ks_url, data={'session': self.session.id, 'csrf_token': self.session.csrf})
+        data = json.loads(r.text)
+        if data['status']['code'] != 0:
+            raise KeybaseError("Attempt to kill user login sessions error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
