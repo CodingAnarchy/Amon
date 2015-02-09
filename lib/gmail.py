@@ -105,13 +105,15 @@ def parse_list_response(line):
 
 
 class GmailUser():
-    def __init__(self, email, pw):
-        self.email = email
+    def __init__(self):
+        self.email = None
         self.smtp_server = smtplib.SMTP('smtp.gmail.com:587')
+        self.imap = imaplib.IMAP4_SSL('imap.gmail.com', 993)
+
+    def login(self, email, pw):
+        self.email = email
         self.smtp_server.starttls()
         self.smtp_server.login(self.email, pw)
-
-        self.imap = imaplib.IMAP4_SSL('imap.gmail.com', 993)
         self.imap.login(self.email, pw)
 
     def send_email(self, to, msg):

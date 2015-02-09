@@ -1,5 +1,6 @@
 from lib.version import AMON_VERSION
 from lib.keybase import KeybaseUser
+from lib.gmail import GmailUser
 from lib.keybase import user_pub_key  # For debugging, to fetch default key to clean gpg slate
 from lib.error import LoginError
 from lib.utils import zero_out
@@ -114,6 +115,7 @@ class Amon(Gtk.Application):
     def __init__(self):
         Gtk.Application.__init__(self, application_id="apps.test.amon")
         self.keybase_user = KeybaseUser()
+        self.gmail = GmailUser()
         self.config = {}
         self.window = None
         self.connect("activate", self.on_activate)
