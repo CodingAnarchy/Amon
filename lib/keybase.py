@@ -91,50 +91,6 @@ def user_pub_key(user):
     return r.text
 
 
-def key_fetch(key_ids, ops=None):
-    logger.info("Fetching keys...")
-    kf_url = kb_url + 'key/fetch.json'
-    key_ids = comma_sep_list(key_ids)
-    opt = 0x00
-    if ops is not None:
-        if not set(ops) < {'encrypt', 'decrypt', 'verify', 'sign'}:
-            raise Exception("Invalid operation for key fetch selected.")
-        if 'encrypt' in ops:
-            opt |= 0x01
-        if 'decrypt' in ops:
-            opt |= 0x02
-        if 'verify' in ops:
-            opt |= 0x04
-        if 'sign' in ops:
-            opt |= 0x08
-
-        if 'decrypt' in ops or 'sign' in ops:
-            if session.id is None:
-                raise Exception("Retrieving private key for encrypting or signing requires login session.")
-            r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt, 'session': session.id})
-        else:
-            if session.id is None:
-                warn("Session should be submitted when fetching keys for CSRF verification!", CSRFWarning)
-                r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt})
-            else:
-                r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt, 'session': session.id})
-    else:
-        warn("Generally want to select operations needed for fetched keys to ensure future usability.", RuntimeWarning)
-        if session.id is None:
-            warn("Session should be submitted when fetching keys for CSRF verification!", CSRFWarning)
-            r = requests.get(kf_url, params={'kids': key_ids})
-        else:
-            r = requests.get(kf_url, params={'kids': key_ids, 'session': session.id})
-
-    data = json.loads(r.text)
-    if data["status"]["code"] != 0:
-        raise KeybaseError("Attempt to fetch keys error: " + str(data["status"]["name"]) +
-                           '\nDescription: ' + str(data["status"]["desc"]))
-    if session.id is not None and data['csrf_token'] != session.csrf:
-        raise CSRFError(session.csrf, data['csrf_token'])
-    return data['keys']
-
-
 def decode_priv_key(obj, ts):
     # Private keys are encoded on Keybase using P3SKB format and TripleSec
     # Have to decode any private keys obtained before using them with GPG
@@ -223,6 +179,49 @@ class KeybaseUser:
                                '\nDescription: ' + str(data["status"]["desc"]))
         if data['csrf_token'] != self.session.csrf:
             raise CSRFError(self.session.csrf, data['csrf_token'])
+
+    def key_fetch(self, key_ids, ops=None):
+        logger.info("Fetching keys...")
+        kf_url = kb_url + 'key/fetch.json'
+        key_ids = comma_sep_list(key_ids)
+        opt = 0x00
+        if ops is not None:
+            if not set(ops) < {'encrypt', 'decrypt', 'verify', 'sign'}:
+                raise Exception("Invalid operation for key fetch selected.")
+            if 'encrypt' in ops:
+                opt |= 0x01
+            if 'decrypt' in ops:
+                opt |= 0x02
+            if 'verify' in ops:
+                opt |= 0x04
+            if 'sign' in ops:
+                opt |= 0x08
+
+            if 'decrypt' in ops or 'sign' in ops:
+                if self.session.id is None:
+                    raise Exception("Retrieving private key for encrypting or signing requires login session.")
+                r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt, 'session': self.session.id})
+            else:
+                if self.session.id is None:
+                    warn("Session should be submitted when fetching keys for CSRF verification!", CSRFWarning)
+                    r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt})
+                else:
+                    r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt, 'session': self.session.id})
+        else:
+            warn("Generally want to select operations needed for fetched keys to ensure future usability.", RuntimeWarning)
+            if self.session.id is None:
+                warn("Session should be submitted when fetching keys for CSRF verification!", CSRFWarning)
+                r = requests.get(kf_url, params={'kids': key_ids})
+            else:
+                r = requests.get(kf_url, params={'kids': key_ids, 'session': self.session.id})
+
+        data = json.loads(r.text)
+        if data["status"]["code"] != 0:
+            raise KeybaseError("Attempt to fetch keys error: " + str(data["status"]["name"]) +
+                               '\nDescription: ' + str(data["status"]["desc"]))
+        if self.session.id is not None and data['csrf_token'] != self.session.csrf:
+            raise CSRFError(self.session.csrf, data['csrf_token'])
+        return data['keys']
 
     def get_salt(self, user):
         gs_url = kb_url + 'getsalt.json'
