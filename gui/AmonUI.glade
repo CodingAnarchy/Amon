@@ -110,8 +110,8 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="_Login">
-                        <property name="label">_Login</property>
+                      <object class="GtkImageMenuItem" id="_Signup">
+                        <property name="label">_Signup</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>

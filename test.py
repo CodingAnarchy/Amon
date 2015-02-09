@@ -1,6 +1,7 @@
 import sys
 from gui.gtk import Amon
 from lib import gpg
+from lib.gmail import GmailUser
 import json
 import logging
 import logging.config
@@ -48,11 +49,14 @@ logging.config.dictConfig(conf)
 
 # amon.kill_sessions()
 
-# gmail.auth()
+email = raw_input('Email Address: ')
+pw = raw_input('Email Password: ')
+gmail = GmailUser(email, pw)
+mbox = gmail.get_mailbox_list()
 
-app = Amon()
-response = app.run()
-sys.exit(response)
+# app = Amon()
+# response = app.run()
+# sys.exit(response)
 
 # new_key = gpg.gen_key(name_real='Matt Tanous', name_email='mtanous22@gmail.com', passphrase='test')
 # print new_key

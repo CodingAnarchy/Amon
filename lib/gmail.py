@@ -14,6 +14,8 @@ from HTMLParser import HTMLParser
 
 gm_header_re = re.compile("^(\d+) \(X-GM-THRID (\d+) X-GM-MSGID (\d+) X-GM-LABELS "
                           "\(([^\)]*)\) UID (\d+) RFC822 {(\d+)}$")
+list_response_pattern = re.compile(r'\((?P<flags>.*?)\) "(?P<delimiter>.*)" (?P<name>.*)')
+
 logger = logging.getLogger(__name__)
 
 
@@ -71,11 +73,6 @@ def parse_email(full_msg):
     }
 
 
-def fetch_email(mail, uid):
-    result, data = mail.uid('fetch', uid, '(RFC822 X-GM-THRID X-GM-MSGID X-GM-LABELS X-GM-MSGID)')
-    return data
-
-
 def make_query():
     # return '(SENTSINCE {startdate}) (SENTBEFORE {enddate})'.format(
     #     startdate=(datetime.date.today() - datetime.timedelta(1)).strftime("%d-%b-%Y"),
@@ -101,13 +98,34 @@ def auth():
     print pp.pformat([parse_email(fetch_email(mail, i))['body'] for i in results])
 
 
-def send_email(fromaddr, toaddr, msg):
-    # Credentials (needed for login)
-    user = raw_input("Email address: ")
-    password = raw_input("Password: ")
+def parse_list_response(line):
+    flags, delimiter, mailbox_name = list_response_pattern.match(line).groups()
+    mailbox_name = mailbox_name.strip('"')
+    return flags, delimiter, mailbox_name
 
-    server = smtplib.SMTP('smtp.gmail.com:587')
-    server.starttls()
-    server.login(user, password)
-    server.sendmail(fromaddr, toaddr, msg)
-    server.quit()
+
+class GmailUser():
+    def __init__(self, email, pw):
+        self.email = email
+        self.smtp_server = smtplib.SMTP('smtp.gmail.com:587')
+        self.smtp_server.starttls()
+        self.smtp_server.login(self.email, pw)
+
+        self.imap = imaplib.IMAP4_SSL('imap.gmail.com', 993)
+        self.imap.login(self.email, pw)
+
+    def send_email(self, to, msg):
+        self.smtp_server.sendmail(self.email, to, msg)
+
+    def fetch_email(self, uid):
+        result, data = self.imap.uid('fetch', uid, '(RFC822 X-GM-THRID X-GM-MSGID X-GM-LABELS X-GM-MSGID)')
+        return data
+
+    def get_mailbox_list(self):
+        logger.info("Getting mailbox list...")
+        typ, data = self.imap.list()
+        logger.info("Response code: " + typ)
+        for idx, line in enumerate(data):
+            data[idx] = parse_list_response(line)
+        logger.debug('Response:' + pprint.pformat(data))
+        return data
