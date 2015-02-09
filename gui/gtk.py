@@ -1,5 +1,6 @@
 from lib.version import AMON_VERSION
 from lib.keybase import KeybaseUser
+from lib.keybase import user_pub_key  # For debugging, to fetch default key to clean gpg slate
 from lib.error import LoginError
 from lib.utils import zero_out
 import lib.gpg as gpg
@@ -10,6 +11,7 @@ import logging
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
+from os import rename
 
 APP_NAME = "Amon"
 import platform
@@ -135,6 +137,7 @@ class Amon(Gtk.Application):
         self.window.show()
         self.add_window(self.window)
 
+        gpg.import_keys(user_pub_key('thorodinson'))  # Debug code to have public key for test
         passphrase = passphrase_dialog(self.window)
         try:
             with open('amon.conf', 'r') as f:
@@ -227,20 +230,57 @@ class Amon(Gtk.Application):
         addr.show()
         vbox.pack_start(addr, False, False, 5)
 
+        email_pw = Gtk.HBox()
+        email_pw_entry = Gtk.Entry()
+        email_pw_entry.set_visibility(False)
+        email_pw_label = Gtk.Label(label='New Email Password:')
+        email_pw_label.set_size_request(150, 10)
+        email_pw_label.show()
+        email_pw.pack_start(email_pw_label, False, False, 10)
+        email_pw_entry.set_text("")
+        email_pw_entry.connect('activate',
+                               lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
+        email_pw_entry.show()
+        email_pw.pack_start(email_pw_entry, False, False, 10)
+        add_help_button(email_pw, "Enter Email Password")
+        email_pw.show()
+        vbox.pack_start(email_pw, False, False, 5)
+
         dialog.show()
         r = dialog.run()
 
         keybase_user = kb_user_entry.get_text()
         keybase_pw = kb_pw_entry.get_text()
         address = addr_entry.get_text()
+        email_pass = email_pw_entry.get_text()
         dialog.destroy()
         if r == Gtk.ResponseType.CANCEL:
             zero_out(keybase_pw)
+            zero_out(email_pass)
             return
 
-        self.config['keybase_user'] = keybase_user
-        self.config['email_address'] = address
-        zero_out(keybase_pw)
+        if keybase_user != '':
+            self.config['keybase_user'] = keybase_user
+        if keybase_pw != '':
+            self.config['keybase_pw'] = keybase_pw
+        if address != '':
+            self.config['email_addr'] = address
+        if email_pass != '':
+            self.config['email_pw'] = email_pass
+
+        with open('amon.conf', 'w+b') as f:
+            json.dump(self.config, f)
+            f.seek(0)
+            gpg.encrypt_msg(f, self.config['email_addr'])
+        rename('enc_msg.gpg', 'amon.conf')
+
+        if self.config['keybase_pw'] != '':
+            logger.debug("Logging in user " + self.config['keybase_user'] + " with password " + self.config['keybase_pw'])
+            self.keybase_user.login(self.config['keybase_user'], self.config['keybase_pw'])
+
+        zero_out(self.config['keybase_pw'])
+        zero_out(self.config['email_pw'])
+
         logger.debug("Set keybase user to " + keybase_user)
         logger.debug("Set email address to " + address)
         logger.info("Updated preference settings.")
@@ -271,3 +311,7 @@ class Amon(Gtk.Application):
         if login_attempts >= 3:
             raise LoginError("Attempted keybase login too many times. Aborting.")
         self.window.status_bar.push(context_id, "Logged in as " + user + ".")
+
+    def on_keybase_signup(self, widget):
+        # TODO: logic for keybase signup
+        pass

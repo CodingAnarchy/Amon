@@ -1,13 +1,13 @@
 # GPG utility library
 from os import system
 import logging
-
 import gnupg
 
 
 # clean GPG test directory on startup before proceeding with test
 system('rm -rf /home/testgpguser/gpghome')
 gpg = gnupg.GPG(gnupghome='/home/testgpguser/gpghome')
+
 logger = logging.getLogger(__name__)
 
 
@@ -69,14 +69,12 @@ def encrypt_msg(msg, to):
     logger.info("Encrypting message...")
     enc_str = None
     if isinstance(msg, file):
-        with msg:
-            # TODO: put output file in same path as input file
-            status = gpg.encrypt_file(msg, recipients=to, always_trust=True, output='enc_msg.gpg')
-            if not status.ok:
-                raise Exception("GPG encryption error: \nstatus: " + status.status + '\nstderr: ' + status.stderr)
-            with open('enc_msg.gpg', 'rb') as enc:
-                enc_str = enc.read()
-                # TODO: Query user for deletion of original and/or encrypted file, if desired
+        # TODO: put output file in same path as input file
+        status = gpg.encrypt_file(msg, recipients=to, always_trust=True, output='enc_msg.gpg')
+        if not status.ok:
+            raise Exception("GPG encryption error: \nstatus: " + status.status + '\nstderr: ' + status.stderr)
+        with open('enc_msg.gpg', 'rb') as enc:
+            enc_str = enc.read()
     else:
         # treat msg as plaintext string
         enc_data = gpg.encrypt(msg, to, always_trust=True)
