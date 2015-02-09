@@ -278,8 +278,8 @@ class Amon(Gtk.Application):
             logger.debug("Logging in user " + self.config['keybase_user'] + " with password " + self.config['keybase_pw'])
             self.keybase_user.login(self.config['keybase_user'], self.config['keybase_pw'])
 
-        zero_out(self.config['keybase_pw'])
-        zero_out(self.config['email_pw'])
+        zero_out(keybase_pw)
+        zero_out(email_pass)
 
         logger.debug("Set keybase user to " + keybase_user)
         logger.debug("Set email address to " + address)
