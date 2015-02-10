@@ -12,6 +12,7 @@ import logging
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
+from gi.repository import Pango
 from os import rename
 
 APP_NAME = "Amon"
@@ -134,10 +135,10 @@ class Amon(Gtk.Application):
         builder.connect_signals(self)
         self.window = builder.get_object("AmonWindow")
         self.window.status_bar = builder.get_object("statusbar")
+        self.window.paned = builder.get_object("paned1")
         del builder
 
-        self.window.show()
-        self.add_window(self.window)
+        listmodel = Gtk.ListStore(str, str, str)
 
         gpg.import_keys(user_pub_key('thorodinson'))  # Debug code to have public key for test
         passphrase = passphrase_dialog(self.window)
@@ -146,15 +147,43 @@ class Amon(Gtk.Application):
                 data = gpg.decrypt_msg(f.read(), passphrase)
                 self.config = json.loads(data)
         except IOError:
-            self.config = {'keybase_user': '', 'keybase_pw': '', 'email_addr': '', 'email_pw': ''}
+            self.config = {'keybase_user': 'thorodinson', 'keybase_pw': '<redacted>',
+                           'email_addr': 'mtanous22@gmail.com', 'email_pw': '<redacted>'}
         finally:
             zero_out(passphrase)
 
         if not self.config['keybase_user'] == '' and not self.config['keybase_pw'] == '':
-            self.keybase_user.login(config['keybase_user'], config['keybase_pw'])
+            self.keybase_user.login(self.config['keybase_user'], self.config['keybase_pw'])
+
+        if not self.config['email_addr'] == '' and not self.config['email_pw'] == '':
+            self.gmail.login(self.config['email_addr'], self.config['email_pw'])
+            mailbox_list = self.gmail.get_mailbox_list()
+            for i in range(len(mailbox_list)):
+                logger.debug(mailbox_list[i])
+                listmodel.append(mailbox_list[i])
+
+        view = Gtk.TreeView(model=listmodel)
+        columns = ['Metadata', 'Delimiter', 'Mailbox']
+        for i in range(len(columns)):
+            cell = Gtk.CellRendererText()
+            if i == 0:
+                cell.props.weight_set = True
+                cell.props.weight = Pango.Weight.BOLD
+            col = Gtk.TreeViewColumn(columns[i], cell, text=i)
+            view.append_column(col)
+
+        view.get_selection().connect("changed", self.on_changed)
+        self.window.paned.add1(view)
+
+        self.window.show_all()
+        self.add_window(self.window)
 
     def gtk_main_quit(self, widget):
         sys.exit()
+
+    def on_changed(self, selection):
+        logger.debug(selection.get_selected())
+        pass
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()
@@ -222,7 +251,7 @@ class Amon(Gtk.Application):
         addr_label.set_size_request(150, 10)
         addr_label.show()
         addr.pack_start(addr_label, False, False, 10)
-        addr_entry.set_text("")
+        addr_entry.set_text(self.config['email_addr'])
         addr_entry.connect('activate',
                            lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
         addr_entry.show()
