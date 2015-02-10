@@ -125,9 +125,17 @@ class GmailUser():
 
     def get_mailbox_list(self):
         logger.info("Getting mailbox list...")
+        mailboxes = []
         typ, data = self.imap.list()
         logger.info("Response code: " + typ)
         for idx, line in enumerate(data):
             data[idx] = parse_list_response(line)
+            path = data[idx][2].split(data[idx][1])
+            box_name = path[-1]
+            if len(path) > 1:
+                parent = path[-2]
+            else:
+                parent = None
+            mailboxes.append([parent, box_name])
         logger.debug('Response:' + pprint.pformat(data))
-        return data
+        return mailboxes
