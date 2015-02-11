@@ -138,7 +138,7 @@ class Amon(Gtk.Application):
         self.window.paned = builder.get_object("paned1")
         del builder
 
-        treemodel = Gtk.TreeStore(str)
+        treemodel = Gtk.TreeStore(str, str)
 
         gpg.import_keys(user_pub_key('thorodinson'))  # Debug code to have public key for test
         passphrase = ""
@@ -158,18 +158,18 @@ class Amon(Gtk.Application):
 
         if not self.config['email_addr'] == '' and not self.config['email_pw'] == '':
             self.gmail.login(self.config['email_addr'], self.config['email_pw'])
-            mailbox_list = self.gmail.get_mailbox_list()
+            mailbox_list = self.gmail.get_mailbox_list(unread=True)
             iters = {}
             for i in range(len(mailbox_list)):
-                logger.debug(mailbox_list[i])
+                logger.debug(mailbox_list[i][1:])
                 if mailbox_list[i][0] is not None:
                     iters[mailbox_list[i][1]] = \
-                        treemodel.append(parent=iters[mailbox_list[i][0]], row=[mailbox_list[i][1]])
+                        treemodel.append(parent=iters[mailbox_list[i][0]], row=mailbox_list[i][1:])
                 else:
-                    iters[mailbox_list[i][1]] = treemodel.append(parent=mailbox_list[i][0], row=[mailbox_list[i][1]])
+                    iters[mailbox_list[i][1]] = treemodel.append(parent=mailbox_list[i][0], row=mailbox_list[i][1:])
 
         view = Gtk.TreeView(model=treemodel)
-        columns = ['Mailbox']
+        columns = ['Mailbox', 'Unread']
         for i in range(len(columns)):
             cell = Gtk.CellRendererText()
             if i == 0:

@@ -123,7 +123,7 @@ class GmailUser():
         result, data = self.imap.uid('fetch', uid, '(RFC822 X-GM-THRID X-GM-MSGID X-GM-LABELS X-GM-MSGID)')
         return data
 
-    def get_mailbox_list(self):
+    def get_mailbox_list(self, unread=False):
         logger.info("Getting mailbox list...")
         mailboxes = []
         typ, data = self.imap.list()
@@ -136,6 +136,16 @@ class GmailUser():
                 parent = path[-2]
             else:
                 parent = None
-            mailboxes.append([parent, box_name])
+            if unread:
+                typ, unseen = self.imap.status(data[idx][2], '(UNSEEN)')
+                unseen = re.sub(r'.*?(\d+).*', r'\1', unseen[0])
+                logger.debug(unseen)
+                if unseen.isdigit():
+                    logger.debug("Mailbox " + box_name + " has " + unseen + " unread messages.")
+                    mailboxes.append([parent, box_name, unseen])
+                else:
+                    mailboxes.append([parent, box_name, ""])
+            else:
+                mailboxes.append([parent, box_name])
         logger.debug('Response:' + pprint.pformat(data))
         return mailboxes
