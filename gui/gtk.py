@@ -178,17 +178,21 @@ class Amon(Gtk.Application):
             col = Gtk.TreeViewColumn(columns[i], cell, text=i)
             view.append_column(col)
 
-        view.get_selection().connect("changed", self.on_changed)
         self.window.paned.add1(view)
 
         self.window.show_all()
+        view.get_selection().connect("changed", self.on_changed)
         self.add_window(self.window)
 
     def gtk_main_quit(self, widget):
         sys.exit()
 
     def on_changed(self, selection):
-        logger.debug(selection.get_selected())
+        store, it = selection.get_selected()
+        mbox = store[it][0]
+        logger.debug("Selected mailbox: " + mbox)
+        email_treemodel = Gtk.TreeStore(str, str)
+        mail = self.gmail.fetch_headers(mbox)
         pass
 
     def on_about(self, widget):

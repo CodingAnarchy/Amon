@@ -109,6 +109,7 @@ class GmailUser():
         self.email = None
         self.smtp_server = smtplib.SMTP('smtp.gmail.com:587')
         self.imap = imaplib.IMAP4_SSL('imap.gmail.com', 993)
+        self.mailboxes = []
 
     def login(self, email, pw):
         self.email = email
@@ -123,9 +124,36 @@ class GmailUser():
         result, data = self.imap.uid('fetch', uid, '(RFC822 X-GM-THRID X-GM-MSGID X-GM-LABELS X-GM-MSGID)')
         return data
 
+    def fetch_headers(self, folder='Inbox'):
+        path = next((temp[0:2] for x, temp in enumerate(self.mailboxes) if temp[1] == folder), folder)
+        mbox = '/'.join(path) if path[0] is not None else path[1]
+        logger.debug("Found mailbox " + mbox)
+        self.imap.select(mbox, readonly=True)
+        result, data = self.imap.uid('search', None, "ALL")
+        id_list = data[0].split()
+        logger.debug("Returned " + str(len(id_list)) + " email ids.")
+        # for i in id_list:
+        #     result, data = self.imap.fetch(i, '(BODY.PEEK[HEADER.FIELDS (SUBJECT FROM)])')
+        #     logger.debug(data[0][1])
+
+    def get_mail_count(self, folder='Inbox'):
+        path = next((temp[0:2] for x, temp in enumerate(self.mailboxes) if temp[1] == folder), folder)
+        mbox = '/'.join(path) if path[0] is not None else path[1]
+        rc, count = self.imap.select(mbox, readonly=True)
+        return count[0]
+
+    def get_unread_count(self, folder='Inbox'):
+        logger.debug("Getting unread message count for " + folder)
+        rc, message = self.imap.status(folder, "(UNSEEN)")
+        try:
+            unread = re.search("UNSEEN (\d+)", message[0]).group(1)
+        except AttributeError:
+            unread = ""
+        return unread
+
     def get_mailbox_list(self, unread=False):
         logger.info("Getting mailbox list...")
-        mailboxes = []
+        self.mailboxes = []
         typ, data = self.imap.list()
         logger.info("Response code: " + typ)
         for idx, line in enumerate(data):
@@ -137,15 +165,10 @@ class GmailUser():
             else:
                 parent = None
             if unread:
-                typ, unseen = self.imap.status(data[idx][2], '(UNSEEN)')
-                unseen = re.sub(r'.*?(\d+).*', r'\1', unseen[0])
-                logger.debug(unseen)
-                if unseen.isdigit():
-                    logger.debug("Mailbox " + box_name + " has " + unseen + " unread messages.")
-                    mailboxes.append([parent, box_name, unseen])
-                else:
-                    mailboxes.append([parent, box_name, ""])
+                unseen = self.get_unread_count('/'.join(path))
+                logger.debug("Mailbox " + box_name + " has " + unseen + " unread messages.")
+                self.mailboxes.append([parent, box_name, unseen])
             else:
-                mailboxes.append([parent, box_name])
+                self.mailboxes.append([parent, box_name])
         logger.debug('Response:' + pprint.pformat(data))
-        return mailboxes
+        return self.mailboxes
