@@ -125,8 +125,10 @@ class GmailUser():
         return data
 
     def fetch_headers(self, folder='Inbox'):
-        path = next((temp[0:2] for x, temp in enumerate(self.mailboxes) if temp[1] == folder), folder)
-        mbox = '/'.join(path) if path[0] is not None else path[1]
+        # Get path to mailbox needed for fetching from IMAP
+        # Search through list of lists for folder, join it to parent path if it exists
+        path = next((temp[:] for x, temp in enumerate(self.mailboxes) if temp[1] == folder), folder)
+        mbox = '/'.join(path) if path[0] is not "" else path[1]
         logger.debug("Found mailbox " + mbox)
         self.imap.select(mbox, readonly=True)
         result, data = self.imap.uid('search', None, "ALL")
@@ -137,8 +139,10 @@ class GmailUser():
         #     logger.debug(data[0][1])
 
     def get_mail_count(self, folder='Inbox'):
-        path = next((temp[0:2] for x, temp in enumerate(self.mailboxes) if temp[1] == folder), folder)
-        mbox = '/'.join(path) if path[0] is not None else path[1]
+        # Get path to mailbox needed for fetching from IMAP
+        # Search through list of lists for folder, join it to parent path if it exists
+        path = next((temp[:] for x, temp in enumerate(self.mailboxes) if temp[1] == folder), folder)
+        mbox = '/'.join(path) if path[0] is not "" else path[1]
         rc, count = self.imap.select(mbox, readonly=True)
         return count[0]
 
@@ -153,13 +157,14 @@ class GmailUser():
 
     def get_mailbox_list(self, unread=False):
         logger.info("Getting mailbox list...")
-        self.mailboxes = []
+        mailboxes = []
         typ, data = self.imap.list()
         logger.info("Response code: " + typ)
         for idx, line in enumerate(data):
             data[idx] = parse_list_response(line)
             path = data[idx][2].split(data[idx][1])
             box_name = path[-1]
+            self.mailboxes.append(['/'.join(path[:-1]), box_name])
             if len(path) > 1:
                 parent = path[-2]
             else:
@@ -167,8 +172,8 @@ class GmailUser():
             if unread:
                 unseen = self.get_unread_count('/'.join(path))
                 logger.debug("Mailbox " + box_name + " has " + unseen + " unread messages.")
-                self.mailboxes.append([parent, box_name, unseen])
+                mailboxes.append([parent, box_name, unseen])
             else:
-                self.mailboxes.append([parent, box_name])
+                mailboxes.append([parent, box_name])
         logger.debug('Response:' + pprint.pformat(data))
-        return self.mailboxes
+        return mailboxes

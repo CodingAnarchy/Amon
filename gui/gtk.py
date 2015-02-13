@@ -180,9 +180,34 @@ class Amon(Gtk.Application):
             view.append_column(col)
 
         self.window.paned.add1(view)
+        view.get_selection().connect("changed", self.on_changed)
+
+        vpaned = Gtk.VPaned()
+        self.window.paned.add2(vpaned)
+
+        scroll_win = Gtk.ScrolledWindow()
+        # scroll_win.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_AUTOMATIC)
+
+        mail_model = Gtk.ListStore(str, str)
+        mail_view = Gtk.TreeView(model=mail_model)
+        scroll_win.add_with_viewport(mail_view)
+
+        for i in range(10):
+            msg_info = ["test@gmail.com", "Testing " + str(i)]
+            mail_model.append(msg_info)
+
+        columns = ['From', 'Subject']
+        for i in range(len(columns)):
+            cell = Gtk.CellRendererText()
+            # if i == 0:
+            #     cell.props.weight_set = True
+            #     cell.props.weight = Pango.Weight.BOLD
+            col = Gtk.TreeViewColumn(columns[i], cell, text=i)
+            mail_view.append_column(col)
+
+        vpaned.add1(scroll_win)
 
         self.window.show_all()
-        view.get_selection().connect("changed", self.on_changed)
         self.add_window(self.window)
 
     def gtk_main_quit(self, widget):
