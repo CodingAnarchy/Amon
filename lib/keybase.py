@@ -236,7 +236,7 @@ class KeybaseUser:
         # print "Logging in..."
         salt, session_id = self.get_salt(user)
         login_url = kb_url + 'login.json'
-        pwh = scrypt.hash(pw, unhexlify(salt), 2**15, 8, 1, 224)[192:224]
+        pwh = scrypt.hash(str(pw), unhexlify(salt), 2**15, 8, 1, 224)[192:224]
         # print "Password was " + pw
         zero_out(pw)
         # print "Password in memory location is now " + pw

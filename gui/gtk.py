@@ -148,8 +148,9 @@ class Amon(Gtk.Application):
                 data = gpg.decrypt_msg(f.read(), passphrase)
                 self.config = json.loads(data)
         except IOError:
-            self.config = {'keybase_user': 'thorodinson', 'keybase_pw': '<redacted>',
-                           'email_addr': 'mtanous22@gmail.com', 'email_pw': '<redacted>'}
+            with open('test.conf', 'r') as f:
+                data = f.read()
+                self.config = json.loads(data)
         finally:
             zero_out(passphrase)
 
