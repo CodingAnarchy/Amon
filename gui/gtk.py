@@ -11,10 +11,11 @@ import json
 import logging
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
-from gi.repository import Pango
+from gi.repository import Gtk, Gdk, GObject, Pango
 from os import rename
+import thread, time
 
+Gdk.threads_init()
 APP_NAME = "Amon"
 import platform
 MONOSPACE_FONT = "Lucida Console" if platform.system() == 'Windows' else 'monospace'
@@ -117,8 +118,12 @@ class Amon(Gtk.Application):
         Gtk.Application.__init__(self, application_id="apps.test.amon")
         self.keybase_user = KeybaseUser()
         self.gmail = GmailUser()
+        self.mailbox_view = None
         self.config = {}
         self.window = None
+        self.status_bar = None
+        self.context_id = None
+        self.error = None
         self.connect("activate", self.on_activate)
 
     def on_activate(self, data=None):
@@ -134,11 +139,22 @@ class Amon(Gtk.Application):
 
         builder.connect_signals(self)
         self.window = builder.get_object("AmonWindow")
-        self.window.status_bar = builder.get_object("statusbar")
+        self.status_bar = builder.get_object("statusbar")
         self.window.paned = builder.get_object("paned1")
         del builder
 
-        treemodel = Gtk.TreeStore(str, str)
+        self.window.show_all()
+        self.add_window(self.window)
+
+        self.context_id = self.status_bar.get_context_id("statusbar")
+        self.update_status_bar()
+
+        def update_status_bar_thread():
+            while True:
+                GObject.idle_add( self.update_status_bar )
+                time.sleep(0.5)
+
+        thread.start_new_thread(update_status_bar_thread, ())
 
         gpg.import_keys(user_pub_key('thorodinson'))  # Debug code to have public key for test
         passphrase = ""
@@ -159,42 +175,22 @@ class Amon(Gtk.Application):
 
         if not self.config['email_addr'] == '' and not self.config['email_pw'] == '':
             self.gmail.login(self.config['email_addr'], self.config['email_pw'])
-            mailbox_list = self.gmail.get_mailbox_list(unread=True)
-            iters = {}
-            for i in range(len(mailbox_list)):
-                logger.debug(mailbox_list[i][1:])
-                if mailbox_list[i][0] is not None:
-                    iters[mailbox_list[i][1]] = \
-                        treemodel.append(parent=iters[mailbox_list[i][0]], row=mailbox_list[i][1:])
-                else:
-                    iters[mailbox_list[i][1]] = treemodel.append(parent=mailbox_list[i][0], row=mailbox_list[i][1:])
 
-        view = Gtk.TreeView(model=treemodel)
-        columns = ['Mailbox', 'Unread']
-        for i in range(len(columns)):
-            cell = Gtk.CellRendererText()
-            if i == 0:
-                cell.props.weight_set = True
-                cell.props.weight = Pango.Weight.BOLD
-            col = Gtk.TreeViewColumn(columns[i], cell, text=i)
-            view.append_column(col)
-
-        self.window.paned.add1(view)
-        view.get_selection().connect("changed", self.on_changed)
+        self.create_mailbox_list()
 
         vpaned = Gtk.VPaned()
         self.window.paned.add2(vpaned)
 
         scroll_win = Gtk.ScrolledWindow()
-        # scroll_win.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_AUTOMATIC)
+        scroll_win.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 
         mail_model = Gtk.ListStore(str, str)
         mail_view = Gtk.TreeView(model=mail_model)
         scroll_win.add_with_viewport(mail_view)
 
-        for i in range(10):
-            msg_info = ["test@gmail.com", "Testing " + str(i)]
-            mail_model.append(msg_info)
+        # for i in range(10):
+        #     msg_info = ["test@gmail.com", "Testing " + str(i)]
+        #     mail_model.append(msg_info)
 
         columns = ['From', 'Subject']
         for i in range(len(columns)):
@@ -207,8 +203,30 @@ class Amon(Gtk.Application):
 
         vpaned.add1(scroll_win)
 
-        self.window.show_all()
-        self.add_window(self.window)
+    def create_mailbox_list(self):
+        mailbox_list = Gtk.TreeStore(str, str)
+        mailbox_view = Gtk.TreeView(model=mailbox_list)
+        self.mailbox_view = mailbox_view
+        mbox_list = self.gmail.get_mailbox_list(unread=True)
+        iters = {}
+        for i in range(len(mbox_list)):
+            logger.debug(mbox_list[i][1:])
+            if mbox_list[i][0] is not None:
+                iters[mbox_list[i][1]] = mailbox_list.append(parent=iters[mbox_list[i][0]], row=mbox_list[i][1:])
+            else:
+                iters[mbox_list[i][1]] = mailbox_list.append(parent=mbox_list[i][0], row=mbox_list[i][1:])
+        columns = ['Mailbox', 'Unread']
+        for i in range(len(columns)):
+            cell = Gtk.CellRendererText()
+            if i == 0:
+                cell.props.weight_set = True
+                cell.props.weight = Pango.Weight.BOLD
+            col = Gtk.TreeViewColumn(columns[i], cell, text=i)
+            mailbox_view.append_column(col)
+
+        self.window.paned.add1(mailbox_view)
+        mailbox_view.get_selection().connect("changed", self.on_changed)
+        mailbox_view.show()
 
     def gtk_main_quit(self, widget):
         sys.exit()
@@ -217,8 +235,7 @@ class Amon(Gtk.Application):
         store, it = selection.get_selected()
         mbox = store[it][0]
         logger.debug("Selected mailbox: " + mbox)
-        mail = self.gmail.fetch_headers(mbox)
-        pass
+        # mail = self.gmail.fetch_headers(mbox)
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()
@@ -357,30 +374,19 @@ class Amon(Gtk.Application):
     def on_close(self, action, parameter):
         action.destroy()
 
-    def on_keybase_login(self, widget):
-        login_success = False
-        login_attempts = 0
-        user = None
-        context_id = self.window.status_bar.get_context_id("login")
-        self.window.status_bar.push(context_id, "Logging in...")
-        while not login_success and login_attempts < 3:
-            user, password = login_dialog(self.window)
-            if user is not None:
-                try:
-                    self.keybase_user.login(user, password)
-                    login_success = True
-                except LoginError:
-                    login_attempts += 1
-                    pass
-                finally:
-                    zero_out(password)  # Shouldn't be necessary, but just to make sure
-            else:
-                # TODO: Cancelled out of login - handle appropriately
-                sys.exit()
-        if login_attempts >= 3:
-            raise LoginError("Attempted keybase login too many times. Aborting.")
-        self.window.status_bar.push(context_id, "Logged in as " + user + ".")
-
     def on_keybase_signup(self, widget):
         # TODO: logic for keybase signup
         pass
+
+    def update_status_bar(self):
+
+        if self.error:
+            text = self.error
+        elif self.keybase_user.updated():
+            text = self.keybase_user.get_status()
+            self.keybase_user.reset_status()
+        else:
+            text = None
+
+        if text:
+            self.status_bar.push(self.context_id, text)

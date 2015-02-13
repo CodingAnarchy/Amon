@@ -134,9 +134,13 @@ class GmailUser():
         result, data = self.imap.uid('search', None, "ALL")
         id_list = data[0].split()
         logger.debug("Returned " + str(len(id_list)) + " email ids.")
-        # for i in id_list:
-        #     result, data = self.imap.fetch(i, '(BODY.PEEK[HEADER.FIELDS (SUBJECT FROM)])')
-        #     logger.debug(data[0][1])
+        return id_list
+
+    def update_mail_list(self, folder='Inbox', mail_list=None):
+        headers = self.fetch_headers(folder)
+        for uid in headers:
+            result, data = self.imap.fetch(uid, '(BODY.PEEK[HEADER.FIELDS (SUBJECT FROM)])')
+            logger.debug(data[0][1])
 
     def get_mail_count(self, folder='Inbox'):
         # Get path to mailbox needed for fetching from IMAP

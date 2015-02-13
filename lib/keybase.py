@@ -151,6 +151,17 @@ class KeybaseUser:
         self.pub_key = None
         self.enc_sec_key = None
         self.session = None
+        self.status = None
+        self.status_change = False
+
+    def updated(self):
+        return self.status_change
+
+    def get_status(self):
+        return self.status
+
+    def reset_status(self):
+        self.status_change = False
 
     def get_pub_key(self):
         return self.pub_key
@@ -159,7 +170,7 @@ class KeybaseUser:
         return decode_priv_key(self.enc_sec_key, self.ts)
 
     def edit_profile(self, bio=None, loc=None, name=None):
-        print "Updating profile..."
+        logger.info("Updating profile...")
         ep_url = kb_url + 'profile-edit.json'
         params = {}
         if bio is not None:
@@ -233,13 +244,13 @@ class KeybaseUser:
         return data["salt"], data["login_session"]
 
     def login(self, user, pw):
-        # print "Logging in..."
+        self.status = "Logging in " + user + " to Keybase..."
+        self.status_change = True
+        logger.info(self.status)
         salt, session_id = self.get_salt(user)
         login_url = kb_url + 'login.json'
         pwh = scrypt.hash(str(pw), unhexlify(salt), 2**15, 8, 1, 224)[192:224]
-        # print "Password was " + pw
         zero_out(pw)
-        # print "Password in memory location is now " + pw
         hmac_pwh = hmac.new(pwh, b64decode(session_id), sha512)
         r = requests.post(login_url, data={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(),
                                            'login_session': session_id})
@@ -249,7 +260,9 @@ class KeybaseUser:
                 raise LoginError("Incorrect login information: " + str(data["status"]["desc"]) + '!')
             raise KeybaseError("Login attempt error: " + str(data["status"]["name"]) +
                                '\nDescription: ' + str(data["status"]["desc"]))
-        # print "Logged in!"
+        self.status = "Logged into Keybase as " + user + "!"
+        self.status_change = True
+        logger.info(self.status)
         self.session = Session(data['session'], data['csrf_token'])
         return data['me']
 
