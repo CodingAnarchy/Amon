@@ -217,7 +217,6 @@ class Amon(Gtk.Application):
         store, it = selection.get_selected()
         mbox = store[it][0]
         logger.debug("Selected mailbox: " + mbox)
-        email_treemodel = Gtk.TreeStore(str, str)
         mail = self.gmail.fetch_headers(mbox)
         pass
 
@@ -240,6 +239,7 @@ class Amon(Gtk.Application):
 
         dialog = Gtk.MessageDialog(parent=self.window, flags=Gtk.DialogFlags.MODAL,
                                    buttons=Gtk.ButtonsType.OK_CANCEL, message_format=message)
+        dialog.set_border_width(10)
 
         image = Gtk.Image()
         image.set_from_stock(Gtk.STOCK_PREFERENCES, Gtk.IconSize.DIALOG)
@@ -250,7 +250,13 @@ class Amon(Gtk.Application):
         vbox = dialog.vbox
         dialog.set_default_response(Gtk.ResponseType.OK)
 
+        listbox = Gtk.ListBox()
+        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        vbox.pack_start(listbox, True, True, 0)
+
+        row = Gtk.ListBoxRow()
         kb_user = Gtk.HBox()
+        row.add(kb_user)
         kb_user_entry = Gtk.Entry()
         kb_user_label = Gtk.Label(label='Keybase Username:')
         kb_user_label.set_size_request(150, 10)
@@ -263,57 +269,53 @@ class Amon(Gtk.Application):
         kb_user.pack_start(kb_user_entry, False, False, 10)
         add_help_button(kb_user, "Keybase User ID")
         kb_user.show()
-        vbox.pack_start(kb_user, False, False, 5)
+        listbox.add(row)
 
+        row = Gtk.ListBoxRow()
         kb_pw = Gtk.HBox()
+        row.add(kb_pw)
         kb_pw_entry = Gtk.Entry()
         kb_pw_entry.set_visibility(False)
         kb_pw_label = Gtk.Label(label='New Keybase Password:')
         kb_pw_label.set_size_request(150, 10)
-        kb_pw_label.show()
         kb_pw.pack_start(kb_pw_label, False, False, 10)
         kb_pw_entry.set_text("")
         kb_pw_entry.connect('activate',
                             lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
-        kb_pw_entry.show()
         kb_pw.pack_start(kb_pw_entry, False, False, 10)
         add_help_button(kb_pw, "Enter Keybase Password")
-        kb_pw.show()
-        vbox.pack_start(kb_pw, False, False, 5)
+        listbox.add(row)
 
+        row = Gtk.ListBoxRow()
         addr = Gtk.HBox()
+        row.add(addr)
         addr_entry = Gtk.Entry()
         addr_label = Gtk.Label(label='Email address:')
         addr_label.set_size_request(150, 10)
-        addr_label.show()
         addr.pack_start(addr_label, False, False, 10)
         addr_entry.set_text(self.config['email_addr'])
         addr_entry.connect('activate',
                            lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
-        addr_entry.show()
         addr.pack_start(addr_entry, False, False, 10)
-        add_help_button(addr,
-                        "Email address for sending and receiving encrypted emails. (Currently only supports Gmail.)")
-        addr.show()
-        vbox.pack_start(addr, False, False, 5)
+        add_help_button(addr, "Email address. (Currently only supports Gmail.)")
+        listbox.add(row)
 
+        row = Gtk.ListBoxRow()
         email_pw = Gtk.HBox()
+        row.add(email_pw)
         email_pw_entry = Gtk.Entry()
         email_pw_entry.set_visibility(False)
         email_pw_label = Gtk.Label(label='New Email Password:')
         email_pw_label.set_size_request(150, 10)
-        email_pw_label.show()
         email_pw.pack_start(email_pw_label, False, False, 10)
         email_pw_entry.set_text("")
         email_pw_entry.connect('activate',
                                lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
-        email_pw_entry.show()
         email_pw.pack_start(email_pw_entry, False, False, 10)
         add_help_button(email_pw, "Enter Email Password")
-        email_pw.show()
-        vbox.pack_start(email_pw, False, False, 5)
+        listbox.add(row)
 
-        dialog.show()
+        dialog.show_all()
         r = dialog.run()
 
         keybase_user = kb_user_entry.get_text()
