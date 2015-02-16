@@ -153,7 +153,7 @@ class Amon(Gtk.Application):
 
         self.window.show_all()
         self.add_window(self.window)
-        self.window.connect("delete-event", self.on_quit)
+        self.window.connect("destroy", self.on_quit)
 
         self.context_id = self.status_bar.get_context_id("statusbar")
         self.update_status_bar()
@@ -261,7 +261,7 @@ class Amon(Gtk.Application):
         self.mail_list.append(row)
         return False
 
-    def on_quit(self, widget):
+    def on_quit(self, widget, parameter=None):
         self.stop = True
         sys.exit()
 
