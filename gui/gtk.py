@@ -227,7 +227,6 @@ class Amon(Gtk.Application):
         #     msg_info = ["test@gmail.com", "Testing " + str(i)]
         #     self.mail_list.append(msg_info)
 
-        self.mailbox_changed = threading.Event()
         update_mail_thread = threading.Thread(target=self.update_mail, args=())
         update_mail_thread.start()
 
@@ -241,15 +240,18 @@ class Amon(Gtk.Application):
         vpaned.show_all()
 
     def update_mail(self):
-        while True:
+        while self.mailbox:
             self.mail_list.clear()
-            while not self.mailbox_changed.is_set():
-                logger.debug(self.mailbox)
-                headers = self.gmail.fetch_headers(self.mailbox)
-                for uid in reversed(headers):
-                    self.gmail.update_mail_list(self.mail_list, uid)
+            logger.debug(self.mailbox)
+            local_mailbox = self.mailbox
+            headers = self.gmail.fetch_headers(self.mailbox)
+            for uid in reversed(headers):
+                if not self.mailbox == local_mailbox:
+                    break
+                self.gmail.update_mail_list(self.mail_list, uid)
 
     def gtk_main_quit(self, widget):
+        self.mailbox = None
         sys.exit()
 
     def on_mailbox_changed(self, selection):
@@ -257,7 +259,6 @@ class Amon(Gtk.Application):
         self.mailbox = store[it][0]
         logger.debug("Selected mailbox: " + self.mailbox)
         self.mailbox_changed.set()
-
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()
