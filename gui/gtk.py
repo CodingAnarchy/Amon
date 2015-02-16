@@ -18,7 +18,7 @@ import time
 import threading
 
 
-Gdk.threads_init()
+GObject.threads_init()
 APP_NAME = "Amon"
 import platform
 MONOSPACE_FONT = "Lucida Console" if platform.system() == 'Windows' else 'monospace'
@@ -240,7 +240,10 @@ class Amon(Gtk.Application):
         vpaned.show_all()
 
     def update_mail(self):
-        while self.mailbox:
+        done = False
+        local_mailbox = None
+        while self.mailbox and not done:
+            headers = None
             self.mail_list.clear()
             logger.debug(self.mailbox)
             local_mailbox = self.mailbox
@@ -249,6 +252,9 @@ class Amon(Gtk.Application):
                 if not self.mailbox == local_mailbox:
                     break
                 self.gmail.update_mail_list(self.mail_list, uid)
+            done = True
+        while self.mailbox == local_mailbox:
+            pass
 
     def gtk_main_quit(self, widget):
         self.mailbox = None

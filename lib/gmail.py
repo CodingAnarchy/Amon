@@ -141,7 +141,6 @@ class GmailUser():
         result, data = self.imap.uid('fetch', uid, '(BODY.PEEK[HEADER.FIELDS (SUBJECT FROM)])')
         if result == 'OK':
             header = data[0][1].split('\r\n')
-            logger.debug(header)
             sender = [s for s in header if "From: " in s or "FROM: " in s][0]
             try:
                 subject = [s for s in header if "Subject: " in s or "SUBJECT: " in s][0]
@@ -149,7 +148,6 @@ class GmailUser():
                 subject = ""
             sender = re.sub(r'^(?i)from: |"', '', sender)
             subject = re.sub(r'^(?i)subject: |"', '', subject)
-            logger.debug("From: " + sender + "\nSubject: " + subject)
             sender, enc = email.header.decode_header(sender)[0]
             subject, enc = email.header.decode_header(subject)[0]
             row = [sender, subject]
