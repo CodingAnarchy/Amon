@@ -124,7 +124,7 @@ class GmailUser():
         result, data = self.imap.uid('fetch', uid, '(RFC822 X-GM-THRID X-GM-MSGID X-GM-LABELS X-GM-MSGID)')
         return data
 
-    def fetch_headers(self, folder='Inbox'):
+    def fetch_headers(self, folder='INBOX'):
         # Get path to mailbox needed for fetching from IMAP
         # Search through list of lists for folder, join it to parent path if it exists
         path = next((temp[:] for x, temp in enumerate(self.mailboxes) if temp[1] == folder), folder)
@@ -136,11 +136,15 @@ class GmailUser():
         logger.debug("Returned " + str(len(id_list)) + " email ids.")
         return id_list
 
-    def update_mail_list(self, folder='Inbox', mail_list=None):
-        headers = self.fetch_headers(folder)
-        for uid in headers:
-            result, data = self.imap.fetch(uid, '(BODY.PEEK[HEADER.FIELDS (SUBJECT FROM)])')
-            logger.debug(data[0][1])
+    def update_mail_list(self, mail_list, uid):
+        logger.debug(uid)
+        result, data = self.imap.uid('fetch', uid, '(BODY.PEEK[HEADER.FIELDS (SUBJECT FROM)])')
+        if result == 'OK':
+            header = data[0][1].split('\r\n')[:2]
+            header[0] = header[0].replace("From: ", "", 1)
+            header[1] = header[1].replace("Subject: ", "", 1)
+            logger.debug(header)
+            mail_list.append(header)
 
     def get_mail_count(self, folder='Inbox'):
         # Get path to mailbox needed for fetching from IMAP

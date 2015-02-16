@@ -11,9 +11,12 @@ import json
 import logging
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GObject, Pango
+from gi.repository import Gtk, Gdk, GObject
 from os import rename
-import thread, time
+import thread
+import time
+import threading
+
 
 Gdk.threads_init()
 APP_NAME = "Amon"
@@ -118,7 +121,11 @@ class Amon(Gtk.Application):
         Gtk.Application.__init__(self, application_id="apps.test.amon")
         self.keybase_user = KeybaseUser()
         self.gmail = GmailUser()
+        self.mailbox_list = Gtk.TreeStore(str, str)
         self.mailbox_view = None
+        self.mailbox = None
+        self.mail_list = Gtk.ListStore(str, str)
+        self.mail_view = None
         self.config = {}
         self.window = None
         self.status_bar = None
@@ -177,44 +184,20 @@ class Amon(Gtk.Application):
             self.gmail.login(self.config['email_addr'], self.config['email_pw'])
 
         self.create_mailbox_list()
-
-        vpaned = Gtk.VPaned()
-        self.window.paned.add2(vpaned)
-
-        scroll_win = Gtk.ScrolledWindow()
-        scroll_win.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-
-        mail_model = Gtk.ListStore(str, str)
-        mail_view = Gtk.TreeView(model=mail_model)
-        scroll_win.add_with_viewport(mail_view)
-
-        # for i in range(10):
-        #     msg_info = ["test@gmail.com", "Testing " + str(i)]
-        #     mail_model.append(msg_info)
-
-        columns = ['From', 'Subject']
-        for i in range(len(columns)):
-            cell = Gtk.CellRendererText()
-            # if i == 0:
-            #     cell.props.weight_set = True
-            #     cell.props.weight = Pango.Weight.BOLD
-            col = Gtk.TreeViewColumn(columns[i], cell, text=i)
-            mail_view.append_column(col)
-
-        vpaned.add1(scroll_win)
+        self.create_mail_list()
 
     def create_mailbox_list(self):
-        mailbox_list = Gtk.TreeStore(str, str)
-        mailbox_view = Gtk.TreeView(model=mailbox_list)
+        from gi.repository import Pango
+        mailbox_view = Gtk.TreeView(model=self.mailbox_list)
         self.mailbox_view = mailbox_view
         mbox_list = self.gmail.get_mailbox_list(unread=True)
         iters = {}
         for i in range(len(mbox_list)):
             logger.debug(mbox_list[i][1:])
             if mbox_list[i][0] is not None:
-                iters[mbox_list[i][1]] = mailbox_list.append(parent=iters[mbox_list[i][0]], row=mbox_list[i][1:])
+                iters[mbox_list[i][1]] = self.mailbox_list.append(parent=iters[mbox_list[i][0]], row=mbox_list[i][1:])
             else:
-                iters[mbox_list[i][1]] = mailbox_list.append(parent=mbox_list[i][0], row=mbox_list[i][1:])
+                iters[mbox_list[i][1]] = self.mailbox_list.append(parent=mbox_list[i][0], row=mbox_list[i][1:])
         columns = ['Mailbox', 'Unread']
         for i in range(len(columns)):
             cell = Gtk.CellRendererText()
@@ -225,17 +208,56 @@ class Amon(Gtk.Application):
             mailbox_view.append_column(col)
 
         self.window.paned.add1(mailbox_view)
-        mailbox_view.get_selection().connect("changed", self.on_changed)
+        self.mailbox = 'INBOX'
+        mailbox_view.get_selection().connect("changed", self.on_mailbox_changed)
         mailbox_view.show()
+
+    def create_mail_list(self):
+        vpaned = Gtk.VPaned()
+        self.window.paned.add2(vpaned)
+
+        scroll_win = Gtk.ScrolledWindow()
+        scroll_win.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+
+        treeview = Gtk.TreeView(model=self.mail_list)
+        self.mail_view = treeview
+        scroll_win.add(self.mail_view)
+
+        # for i in range(10):
+        #     msg_info = ["test@gmail.com", "Testing " + str(i)]
+        #     self.mail_list.append(msg_info)
+
+        self.mailbox_changed = threading.Event()
+        update_mail_thread = threading.Thread(target=self.update_mail, args=())
+        update_mail_thread.start()
+
+        columns = ['From', 'Subject']
+        for i in range(len(columns)):
+            cell = Gtk.CellRendererText()
+            col = Gtk.TreeViewColumn(columns[i], cell, text=i)
+            treeview.append_column(col)
+
+        vpaned.add1(scroll_win)
+        vpaned.show_all()
+
+    def update_mail(self):
+        while True:
+            self.mail_list.clear()
+            while not self.mailbox_changed.is_set():
+                logger.debug(self.mailbox)
+                headers = self.gmail.fetch_headers(self.mailbox)
+                for uid in reversed(headers):
+                    self.gmail.update_mail_list(self.mail_list, uid)
 
     def gtk_main_quit(self, widget):
         sys.exit()
 
-    def on_changed(self, selection):
+    def on_mailbox_changed(self, selection):
         store, it = selection.get_selected()
-        mbox = store[it][0]
-        logger.debug("Selected mailbox: " + mbox)
-        # mail = self.gmail.fetch_headers(mbox)
+        self.mailbox = store[it][0]
+        logger.debug("Selected mailbox: " + self.mailbox)
+        self.mailbox_changed.set()
+
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()
