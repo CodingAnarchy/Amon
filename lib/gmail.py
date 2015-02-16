@@ -141,10 +141,14 @@ class GmailUser():
         result, data = self.imap.uid('fetch', uid, '(BODY.PEEK[HEADER.FIELDS (SUBJECT FROM)])')
         if result == 'OK':
             header = data[0][1].split('\r\n')[:2]
-            header[0] = header[0].replace("From: ", "", 1)
-            header[1] = header[1].replace("Subject: ", "", 1)
             logger.debug(header)
-            mail_list.append(header)
+            sender = [s for s in header if "From: " in s][0]
+            subject = [s for s in header if "Subject: " in s][0]
+            sender = sender.replace("From: ", "", 1)
+            subject = subject.replace("Subject: ", "", 1)
+            row = [sender, subject]
+            logger.debug(row)
+            mail_list.append(row)
 
     def get_mail_count(self, folder='Inbox'):
         # Get path to mailbox needed for fetching from IMAP

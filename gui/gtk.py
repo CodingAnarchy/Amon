@@ -258,7 +258,6 @@ class Amon(Gtk.Application):
         store, it = selection.get_selected()
         self.mailbox = store[it][0]
         logger.debug("Selected mailbox: " + self.mailbox)
-        self.mailbox_changed.set()
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()
