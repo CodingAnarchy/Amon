@@ -108,9 +108,10 @@ class GmailUser():
     def send_email(self, to, msg):
         self.smtp_server.sendmail(self.email, to, msg)
 
-    def fetch_email(self, uid):
+    def fetch_email(self, uid, folder='Inbox'):
+        self.imap.select(folder)
         result, data = self.imap.uid('fetch', uid, '(RFC822 X-GM-THRID X-GM-MSGID X-GM-LABELS X-GM-MSGID)')
-        return data
+        return parse_email(data)
 
     def fetch_headers(self, folder='INBOX', conn=None):
         if conn is None:
@@ -142,7 +143,7 @@ class GmailUser():
             subject = re.sub(r'^(?i)subject: |"', '', subject)
             sender, enc = email.header.decode_header(sender)[0]
             subject, enc = email.header.decode_header(subject)[0]
-            row = [sender, subject]
+            row = [sender, subject, uid]
             logger.debug(row)
             return row
 

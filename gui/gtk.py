@@ -124,7 +124,7 @@ class Amon(Gtk.Application):
         self.mailbox_list = Gtk.TreeStore(str, str)
         self.mailbox_view = None
         self.mailbox = None
-        self.mail_list = Gtk.ListStore(str, str)
+        self.mail_list = Gtk.ListStore(str, str, str)
         self.mail_view = None
         self.config = {}
         self.window = None
@@ -228,11 +228,15 @@ class Amon(Gtk.Application):
         update_mail_thread = threading.Thread(target=self.update_mail, args=())
         update_mail_thread.start()
 
-        columns = ['From', 'Subject']
+        columns = ['From', 'Subject', 'UID']
         for i in range(len(columns)):
             cell = Gtk.CellRendererText()
             col = Gtk.TreeViewColumn(columns[i], cell, text=i)
+            if columns[i] == 'UID':
+                col.set_visible(False)
             treeview.append_column(col)
+
+        treeview.connect("button-press-event", self.mail_clicked)
 
         vpaned.add1(scroll_win)
         vpaned.show_all()
@@ -269,6 +273,15 @@ class Amon(Gtk.Application):
         store, it = selection.get_selected()
         self.mailbox = store[it][0]
         logger.debug("Selected mailbox: " + self.mailbox)
+
+    def mail_clicked(self, widget, event):
+        if event.button == 1 and event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
+            selection = widget.get_selection()
+            store, it = selection.get_selected()
+            logger.debug("Double clicked: " + str(store[it]))
+            uid = store[it][2]
+            email = self.gmail.fetch_email(uid, self.mailbox)
+            print email
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()
