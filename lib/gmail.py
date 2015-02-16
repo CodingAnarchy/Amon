@@ -117,6 +117,11 @@ class GmailUser():
         self.smtp_server.login(self.email, pw)
         self.imap.login(self.email, pw)
 
+    def imap_conn(self, pw):
+        local_conn = imaplib.IMAP4_SSL('imap.gmail.com', 993)
+        local_conn.login(self.email, pw)
+        return local_conn
+
     def send_email(self, to, msg):
         self.smtp_server.sendmail(self.email, to, msg)
 
@@ -124,21 +129,25 @@ class GmailUser():
         result, data = self.imap.uid('fetch', uid, '(RFC822 X-GM-THRID X-GM-MSGID X-GM-LABELS X-GM-MSGID)')
         return data
 
-    def fetch_headers(self, folder='INBOX'):
+    def fetch_headers(self, folder='INBOX', conn=None):
+        if conn is None:
+            conn = self.imap
         # Get path to mailbox needed for fetching from IMAP
         # Search through list of lists for folder, join it to parent path if it exists
         path = next((temp[:] for x, temp in enumerate(self.mailboxes) if temp[1] == folder), folder)
         mbox = '/'.join(path) if path[0] is not "" else path[1]
         logger.debug("Found mailbox " + mbox)
-        self.imap.select(mbox, readonly=True)
-        result, data = self.imap.uid('search', None, "ALL")
+        conn.select(mbox, readonly=True)
+        result, data = conn.uid('search', None, "ALL")
         id_list = data[0].split()
         logger.debug("Returned " + str(len(id_list)) + " email ids.")
         return id_list
 
-    def get_mail_list_item(self, uid):
+    def get_mail_list_item(self, uid, conn=None):
+        if conn is None:
+            conn = self.imap
         logger.debug(uid)
-        result, data = self.imap.uid('fetch', uid, '(BODY.PEEK[HEADER.FIELDS (SUBJECT FROM)])')
+        result, data = conn.uid('fetch', uid, '(BODY.PEEK[HEADER.FIELDS (SUBJECT FROM)])')
         if result == 'OK':
             header = data[0][1].split('\r\n')
             sender = [s for s in header if "From: " in s or "FROM: " in s][0]

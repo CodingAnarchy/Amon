@@ -14,7 +14,8 @@
     <property name="window_position">center</property>
     <property name="default_width">1080</property>
     <property name="default_height">600</property>
-    <signal name="destroy-event" handler="gtk_main_quit" swapped="no"/>
+    <signal name="delete-event" handler="on_quit" swapped="no"/>
+    <signal name="destroy-event" handler="on_quit" swapped="no"/>
     <child>
       <object class="GtkBox" id="vbox">
         <property name="visible">True</property>
@@ -67,7 +68,7 @@
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="gtk_main_quit" swapped="no"/>
+                        <signal name="activate" handler="on_quit" swapped="no"/>
                         <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                     </child>

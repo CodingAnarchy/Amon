@@ -131,6 +131,7 @@ class Amon(Gtk.Application):
         self.status_bar = None
         self.context_id = None
         self.error = None
+        self.stop = False
         self.connect("activate", self.on_activate)
 
     def on_activate(self, data=None):
@@ -152,13 +153,14 @@ class Amon(Gtk.Application):
 
         self.window.show_all()
         self.add_window(self.window)
+        self.window.connect("delete-event", self.on_quit)
 
         self.context_id = self.status_bar.get_context_id("statusbar")
         self.update_status_bar()
 
         def update_status_bar_thread():
             while True:
-                GObject.idle_add( self.update_status_bar )
+                GObject.idle_add(self.update_status_bar)
                 time.sleep(0.5)
 
         thread.start_new_thread(update_status_bar_thread, ())
@@ -223,14 +225,8 @@ class Amon(Gtk.Application):
         self.mail_view = treeview
         scroll_win.add(self.mail_view)
 
-        # for i in range(10):
-        #     msg_info = ["test@gmail.com", "Testing " + str(i)]
-        #     self.mail_list.append(msg_info)
-
-        # update_mail_thread = threading.Thread(target=self.update_mail, args=())
-        # update_mail_thread.start()
-
-        Gio.io_scheduler_push_job(self.update_mail, None, GLib.PRIORITY_DEFAULT, None)
+        update_mail_thread = threading.Thread(target=self.update_mail, args=())
+        update_mail_thread.start()
 
         columns = ['From', 'Subject']
         for i in range(len(columns)):
@@ -241,25 +237,38 @@ class Amon(Gtk.Application):
         vpaned.add1(scroll_win)
         vpaned.show_all()
 
-    def update_mail(self, job, cancellable, user_data):
-        local_mailbox = self.mailbox
-        self.mail_list.clear()
-        headers = self.gmail.fetch_headers(self.mailbox)
-        for uid in reversed(headers):
-            if not self.mailbox == local_mailbox:
-                self.mail_list.clear()
-                break
-            row = self.gmail.get_mail_list_item(uid)
-            self.mail_list.append(row)
+    def update_mail(self):
+        local_conn = self.gmail.imap_conn(self.config['email_pw'])
+        done = False
+        headers = None
+        local_mailbox = None
+        while not self.stop:
+            if not local_mailbox == self.mailbox:
+                local_mailbox = self.mailbox
+                GObject.idle_add(self.mail_list.clear)
+                headers = self.gmail.fetch_headers(self.mailbox, local_conn)
+                done = False
+            if not done:
+                for uid in reversed(headers):
+                    row = self.gmail.get_mail_list_item(uid, local_conn)
+                    logger.debug(self.stop)
+                    if not self.mailbox == local_mailbox or self.stop:
+                        break
+                    GObject.idle_add(self.update_mail_list, row)
+                done = True
 
-    def gtk_main_quit(self, widget):
-        Gtk.main_quit()
+    def update_mail_list(self, row):
+        self.mail_list.append(row)
+        return False
+
+    def on_quit(self, widget):
+        self.stop = True
+        sys.exit()
 
     def on_mailbox_changed(self, selection):
         store, it = selection.get_selected()
         self.mailbox = store[it][0]
         logger.debug("Selected mailbox: " + self.mailbox)
-        Gio.io_scheduler_push_job(self.update_mail, None, GLib.PRIORITY_DEFAULT, None)
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()
