@@ -11,7 +11,7 @@ import json
 import logging
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GObject
+from gi.repository import Gtk, Gdk, GLib, GObject, Gio
 from os import rename
 import thread
 import time
@@ -227,8 +227,10 @@ class Amon(Gtk.Application):
         #     msg_info = ["test@gmail.com", "Testing " + str(i)]
         #     self.mail_list.append(msg_info)
 
-        update_mail_thread = threading.Thread(target=self.update_mail, args=())
-        update_mail_thread.start()
+        # update_mail_thread = threading.Thread(target=self.update_mail, args=())
+        # update_mail_thread.start()
+
+        Gio.io_scheduler_push_job(self.update_mail, None, GLib.PRIORITY_DEFAULT, None)
 
         columns = ['From', 'Subject']
         for i in range(len(columns)):
@@ -239,31 +241,25 @@ class Amon(Gtk.Application):
         vpaned.add1(scroll_win)
         vpaned.show_all()
 
-    def update_mail(self):
-        done = False
-        local_mailbox = None
-        while self.mailbox and not done:
-            headers = None
-            self.mail_list.clear()
-            logger.debug(self.mailbox)
-            local_mailbox = self.mailbox
-            headers = self.gmail.fetch_headers(self.mailbox)
-            for uid in reversed(headers):
-                if not self.mailbox == local_mailbox:
-                    break
-                self.gmail.update_mail_list(self.mail_list, uid)
-            done = True
-        while self.mailbox == local_mailbox:
-            pass
+    def update_mail(self, job, cancellable, user_data):
+        local_mailbox = self.mailbox
+        self.mail_list.clear()
+        headers = self.gmail.fetch_headers(self.mailbox)
+        for uid in reversed(headers):
+            if not self.mailbox == local_mailbox:
+                self.mail_list.clear()
+                break
+            row = self.gmail.get_mail_list_item(uid)
+            self.mail_list.append(row)
 
     def gtk_main_quit(self, widget):
-        self.mailbox = None
-        sys.exit()
+        Gtk.main_quit()
 
     def on_mailbox_changed(self, selection):
         store, it = selection.get_selected()
         self.mailbox = store[it][0]
         logger.debug("Selected mailbox: " + self.mailbox)
+        Gio.io_scheduler_push_job(self.update_mail, None, GLib.PRIORITY_DEFAULT, None)
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()

@@ -35,9 +35,7 @@ GUI interface
 
 * menu bar options
 * preferences menu saves preferences to disk in encrypted format
-* mailbox and mail listing (sometimes freezes on updating due to apparent bug (Possibly [Glib bug](https://bugs.launchpad.net/ubuntu/+source/gnome-control-center/+bug/1264368))
-  * Receives "Warning: Source ID XXX was not found when attempting to remove it" message on trying to append list item
-  * List does not accept any further appends after this point.
+* mailbox and mail listing (sometimes crashes on SSLError (wrong version?)
   
 # In Development
 
