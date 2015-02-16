@@ -81,23 +81,6 @@ def make_query():
     return '(SENTSINCE "01-JAN-2015" BODY "BEGIN PGP")'
 
 
-def auth():
-    imapquery = make_query()
-    logger.info("IMAP query is " + imapquery)
-    # No proxy - requires changes for proxy ('localhost', <forwarded port>)
-    mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
-    user = raw_input("Please enter your email address: ")
-    pw = raw_input("Please enter your password: ")
-    mail.login(user, pw)
-    # Out: list of "folders" (labels in gmail)
-    mail.select('"[Gmail]/All Mail"')  # connect to "All Mail" folder
-    status, data = mail.uid('search', None, imapquery)
-    results = data[0].split()
-    logger.info("IMAP Server returned " + str(len(results)) + " results")
-    pp = pprint.PrettyPrinter(indent=4)
-    print pp.pformat([parse_email(fetch_email(mail, i))['body'] for i in results])
-
-
 def parse_list_response(line):
     flags, delimiter, mailbox_name = list_response_pattern.match(line).groups()
     mailbox_name = mailbox_name.strip('"')
