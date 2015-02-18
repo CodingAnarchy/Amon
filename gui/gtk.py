@@ -308,11 +308,12 @@ class Amon(Gtk.Application):
         # Build dialog window for case when displaying email
         if email is not None and typ is None:
             headers = ['From', 'Subject', 'To']
-            label_width = len(max(headers, key=len)) + 1
+            label_width = len(max(headers, key=len)) + 5
             label_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
             data_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
             for header in headers:
-                header_label = Gtk.Label((header + ':').ljust(label_width, ' '))
+                header_label = Gtk.Label()
+                header_label.set_markup(('<b>' + header + ':</b>').ljust(label_width, ' '))
                 header_data = Gtk.Label(','.join(email['headers'][header]).replace('\n', ' ').replace('\r', ''))
                 header_label.set_halign(Gtk.Align.START)
                 header_data.set_halign(Gtk.Align.START)
