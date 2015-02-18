@@ -133,6 +133,7 @@ class Amon(Gtk.Application):
         self.context_id = None
         self.error = None
         self.stop = False
+        self.load_progress = None
         self.connect("activate", self.on_activate)
 
     def on_activate(self, data=None):
@@ -254,12 +255,15 @@ class Amon(Gtk.Application):
                 headers = self.gmail.fetch_headers(self.mailbox, local_conn)
                 done = False
             if not done:
+                count = len(headers)
                 for uid in reversed(headers):
                     row = self.gmail.get_mail_list_item(uid, local_conn)
                     logger.debug(self.stop)
                     if not self.mailbox == local_mailbox or self.stop:
                         break
                     GObject.idle_add(self.update_mail_list, row)
+                    count -= 1
+                    self.load_progress = "Fetching " + str(count) + " emails..."
                 done = True
 
     def update_mail_list(self, row):
@@ -295,8 +299,35 @@ class Amon(Gtk.Application):
         else:
             title = 'New Email'
         email_win = Gtk.Dialog(parent=self.window, flags=Gtk.DialogFlags.MODAL, title=title)
-        email_win.set_default_size(600, 400)
+        email_win.set_default_size(800, 500)
         box = email_win.get_content_area()
+
+        toolbar = Gtk.Toolbar(icon_size=1)
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+
+        # Build dialog window for case when displaying email
+        if email is not None and typ is None:
+            headers = ['From', 'Subject', 'To']
+            label_width = len(max(headers, key=len)) + 1
+            label_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            data_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            for header in headers:
+                header_label = Gtk.Label((header + ':').ljust(label_width, ' '))
+                header_data = Gtk.Label(','.join(email['headers'][header]).replace('\n', ' ').replace('\r', ''))
+                header_label.set_halign(Gtk.Align.START)
+                header_data.set_halign(Gtk.Align.START)
+                label_box.pack_start(header_label, False, False, 0)
+                data_box.pack_start(header_data, False, False, 0)
+            header_box.add(label_box)
+            header_box.add(data_box)
+
+            reply_btn = Gtk.ToolButton(label="_Reply", use_underline=True)
+            forward_btn = Gtk.ToolButton(label="_Forward", use_underline=True)
+            toolbar.insert(reply_btn, 0)
+            toolbar.insert(forward_btn, 1)
+
+        box.add(toolbar)
+        box.add(header_box)
 
         email_win.show_all()
 
@@ -448,6 +479,9 @@ class Amon(Gtk.Application):
         elif self.keybase_user.updated():
             text = self.keybase_user.get_status()
             self.keybase_user.reset_status()
+        elif self.load_progress:
+            text = self.load_progress
+            self.load_progress = None
         else:
             text = None
 
