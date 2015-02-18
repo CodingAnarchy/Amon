@@ -16,6 +16,7 @@ from os import rename
 import thread
 import time
 import threading
+from pprint import pprint
 
 
 GObject.threads_init()
@@ -281,7 +282,23 @@ class Amon(Gtk.Application):
             logger.debug("Double clicked: " + str(store[it]))
             uid = store[it][2]
             email = self.gmail.fetch_email(uid, self.mailbox)
-            print email
+            self.email_window(email=email)
+
+    def email_window(self, typ=None, email=None):
+        if email:
+            pprint(email)
+            title = email['headers']['Subject'][0]
+            if typ == 'Reply':
+                title = 'Re: ' + title
+            elif typ == 'Forward':
+                title = 'Fw: ' + title
+        else:
+            title = 'New Email'
+        email_win = Gtk.Dialog(parent=self.window, flags=Gtk.DialogFlags.MODAL, title=title)
+        email_win.set_default_size(600, 400)
+        box = email_win.get_content_area()
+
+        email_win.show_all()
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()
