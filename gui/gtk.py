@@ -339,6 +339,8 @@ class Amon(Gtk.Application):
         webview = WebKit2.WebView()
         for sub in email['body'].walk():
             if not sub.is_multipart():
+                # Required workaround until the binding for load_bytes() is available
+                # requires package only currently released for Ubuntu 15.04 (releases April 23, 2015)
                 if sub.get_content_type() == 'text/html':
                     webview.load_html(sub.get_payload(decode=True))
                 elif sub.get_content_type() == 'text/plain':
