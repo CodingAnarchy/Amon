@@ -2,7 +2,6 @@ from lib.version import AMON_VERSION
 from lib.keybase import KeybaseUser
 from lib.gmail import GmailUser
 from lib.keybase import user_pub_key  # For debugging, to fetch default key to clean gpg slate
-from lib.error import LoginError
 from lib.utils import zero_out
 import lib.gpg as gpg
 
@@ -11,7 +10,7 @@ import json
 import logging
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GLib, GObject, Gio
+from gi.repository import Gtk, Gdk, GLib, GObject, Gio, WebKit2
 from os import rename
 import thread
 import time
@@ -79,7 +78,8 @@ def password_line(label):
 
 
 def login_dialog(parent):
-    dialog = Gtk.Dialog("Please Enter Your Login", parent, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.ButtonsType.OK_CANCEL)
+    dialog = Gtk.Dialog("Please Enter Your Login", parent, Gtk.DialogFlags.MODAL |
+                        Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.ButtonsType.OK_CANCEL)
     # dialog.get_image().set_visible(False)
     current_user, current_user_entry = username_line("Username: ")
     current_user_entry.connect('activate',
@@ -101,7 +101,8 @@ def login_dialog(parent):
 
 
 def passphrase_dialog(parent):
-    dialog = Gtk.Dialog("Please Enter Your GPG Passphrase", parent, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.ButtonsType.OK_CANCEL)
+    dialog = Gtk.Dialog("Please Enter Your GPG Passphrase", parent, Gtk.DialogFlags.MODAL |
+                        Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.ButtonsType.OK_CANCEL)
     # dialog.get_image().set_visible(False)
     current_pw, current_pw_entry = password_line("Passphrase: ")
     current_pw_entry.connect("activate",
@@ -143,7 +144,7 @@ class Amon(Gtk.Application):
         # get the file (if it is there)
         try:
             builder.add_from_file("gui/AmonUI.glade")
-        except:
+        except IOError:
             print "File not found!"
             sys.exit()
 
@@ -305,7 +306,8 @@ class Amon(Gtk.Application):
         toolbar = Gtk.Toolbar(icon_size=1)
         header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
 
-        # Build dialog window for case when displaying email
+        # Build email header details view
+        # Case: displaying selected email
         if email is not None and typ is None:
             headers = ['From', 'Subject', 'To']
             label_width = len(max(headers, key=len)) + 5
@@ -327,9 +329,22 @@ class Amon(Gtk.Application):
             toolbar.insert(reply_btn, 0)
             toolbar.insert(forward_btn, 1)
 
+        # Add toolbar and header information view
         box.add(toolbar)
         box.add(header_box)
 
+        # Build email display/edit area
+        email_scroll = Gtk.ScrolledWindow()
+        email_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        webview = WebKit2.WebView()
+        for sub in email['body'].walk():
+            if not sub.is_multipart():
+                if sub.get_content_type() == 'text/html':
+                    webview.load_html(sub.get_payload(decode=True))
+                elif sub.get_content_type() == 'text/plain':
+                    webview.load_plain_text(sub.get_payload(decode=True))
+        email_scroll.add(webview)
+        box.pack_start(email_scroll, True, True, 5)
         email_win.show_all()
 
     def on_about(self, widget):

@@ -68,8 +68,8 @@ def parse_email(full_msg):
     # print email.utils.parseaddr(email_msg['From'])
     return {
         'headers': parse_headers(),
-        'body': get_first_text_block(),
-        'raw': full_msg
+        # 'body': get_first_text_block(),
+        'body': email_msg,
     }
 
 
