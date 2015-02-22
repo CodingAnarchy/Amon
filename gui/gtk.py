@@ -302,9 +302,13 @@ class Amon(Gtk.Application):
         email_win = Gtk.Dialog(parent=self.window, flags=Gtk.DialogFlags.MODAL, title=title)
         email_win.set_default_size(800, 500)
         box = email_win.get_content_area()
+        box.set_spacing(5)
 
         toolbar = Gtk.Toolbar(icon_size=1)
         header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+
+        if typ is not None or email is None:
+            header_entries = {}
 
         # Build email header details view
         # Case: displaying selected email
@@ -321,13 +325,41 @@ class Amon(Gtk.Application):
                 header_data.set_halign(Gtk.Align.START)
                 label_box.pack_start(header_label, False, False, 0)
                 data_box.pack_start(header_data, False, False, 0)
+
             header_box.add(label_box)
             header_box.add(data_box)
 
             reply_btn = Gtk.ToolButton(label="_Reply", use_underline=True)
+            reply_btn.connect('clicked', self.on_reply, email)
             forward_btn = Gtk.ToolButton(label="_Forward", use_underline=True)
+            forward_btn.connect('clicked', self.on_forward, email)
             toolbar.insert(reply_btn, 0)
             toolbar.insert(forward_btn, 1)
+        # Case: replying to selected email
+        elif email is not None and typ is 'Reply':
+            headers = ['To', 'CC', 'BCC', 'Subject']
+            label_width = len(max(headers, key=len)) + 5
+            label_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            data_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            for header in headers:
+                header_label = Gtk.Label()
+                header_label.set_markup(('<b>' + header + ':</b>').ljust(label_width, ' '))
+                header_entry = Gtk.Entry()
+                if header == 'Subject':
+                    header_entry.set_text('Re: ' +
+                                          ','.join(email['headers'][header]).replace('\n', ' ').replace('\r', ''))
+                header_label.set_halign(Gtk.Align.START)
+                header_entry.set_halign(Gtk.Align.START)
+                header_entry.set_width_chars(150)
+                header_entries[header] = header_entry
+                label_box.pack_start(header_label, False, False, 0)
+                data_box.pack_start(header_entry, False, False, 0)
+
+            header_box.add(label_box)
+            header_box.add(data_box)
+
+            send_btn = Gtk.ToolButton(label="_Send", use_underline=True)
+            toolbar.insert(send_btn, 0)
 
         # Add toolbar and header information view
         box.add(toolbar)
@@ -337,6 +369,8 @@ class Amon(Gtk.Application):
         email_scroll = Gtk.ScrolledWindow()
         email_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         webview = WebKit2.WebView()
+        if typ in ['Reply', 'Forward']:
+            webview.set_editable(True)
         for sub in email['body'].walk():
             if not sub.is_multipart():
                 # Required workaround until the binding for load_bytes() is available
@@ -348,6 +382,12 @@ class Amon(Gtk.Application):
         email_scroll.add(webview)
         box.pack_start(email_scroll, True, True, 5)
         email_win.show_all()
+
+    def on_reply(self, widget, data):
+        self.email_window('Reply', data)
+
+    def on_forward(self, widget, data):
+        self.email_window('Forward', data)
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()
