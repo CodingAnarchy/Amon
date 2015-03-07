@@ -25,6 +25,12 @@ def comma_sep_list(lst):
     return lst
 
 
+def build_list(comma_sep):
+    lst = comma_sep.split(',')
+    lst = [x.strip('_') for x in lst]
+    return lst
+
+
 def zero_out(string):
     temp = "finding offset"
     header = ctypes.string_at(id(temp), sys.getsizeof(temp)).find(temp)

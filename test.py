@@ -19,9 +19,10 @@ logging.config.dictConfig(conf)
 # keys, csrf = amon.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
 
 # Test code for obtaining a user's public key
+pub_key = keybase.user_pub_key('christopherburg')
+gpg.import_keys(pub_key)
 pub_key = keybase.user_pub_key('thorodinson')
-import_result = gpg.import_keys(pub_key)
-# pprint(import_result.results)
+gpg.import_keys(pub_key)
 
 # print gpg.list_keys(True)
 

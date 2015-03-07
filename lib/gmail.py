@@ -6,12 +6,14 @@ import imaplib
 import email
 import email.header
 from email.mime.text import MIMEText
-import datetime
 import re
 import quopri
 import pprint
 import logging
 from HTMLParser import HTMLParser
+
+from utils import build_list, comma_sep_list
+import gpg
 
 gm_header_re = re.compile("^(\d+) \(X-GM-THRID (\d+) X-GM-MSGID (\d+) X-GM-LABELS "
                           "\(([^\)]*)\) UID (\d+) RFC822 {(\d+)}$")
@@ -108,11 +110,13 @@ class GmailUser():
 
     def send_email(self, to, subject, msg):
         # TODO: Implement Subject, CC and BCC headers
-        msg = MIMEText(msg)
+        to = build_list(to)
+        enc = gpg.encrypt_msg(msg, to)
+        msg = MIMEText(enc)
         msg['Subject'] = subject
         msg['From'] = self.email
-        msg['To'] = to
-        self.smtp_server.sendmail(self.email, [to], msg.as_string())
+        msg['To'] = comma_sep_list(to)
+        self.smtp_server.sendmail(self.email, to, msg.as_string())
 
     def fetch_email(self, uid, folder='Inbox'):
         self.imap.select(folder)

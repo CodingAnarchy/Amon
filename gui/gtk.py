@@ -424,11 +424,11 @@ class Amon(Gtk.Application):
 
         buf = data[1]
         msg = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
-        enc = gpg.encrypt_msg(msg, toaddr)
+
         buf.delete(buf.get_start_iter(), buf.get_end_iter())
+        # TODO: Implement CC and BCC fields
+        self.gmail.send_email(toaddr, subject, msg)
         zero_out(msg)
-        # TODO: Implement Subject, CC and BCC fields
-        self.gmail.send_email(toaddr, subject, enc)
         data[2].destroy()
 
     def on_about(self, widget):
