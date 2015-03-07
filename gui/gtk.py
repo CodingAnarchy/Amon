@@ -313,11 +313,11 @@ class Amon(Gtk.Application):
 
         # Build email header details view
         # Case: displaying selected email
+        label_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        data_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
         if email is not None and typ is None:
             headers = ['From', 'Subject', 'To']
             label_width = len(max(headers, key=len)) + 5
-            label_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-            data_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
             for header in headers:
                 header_label = Gtk.Label()
                 header_label.set_markup(('<b>' + header + ':</b>').ljust(label_width, ' '))
@@ -340,8 +340,6 @@ class Amon(Gtk.Application):
         elif email is None or typ == 'Reply' or typ == 'Forward':
             headers = ['To', 'CC', 'BCC', 'Subject']
             label_width = len(max(headers, key=len)) + 5
-            label_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-            data_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
             for header in headers:
                 header_label = Gtk.Label()
                 header_label.set_markup(('<b>' + header + ':</b>').ljust(label_width, ' '))
@@ -355,8 +353,8 @@ class Amon(Gtk.Application):
                 header_entry.set_halign(Gtk.Align.START)
                 header_entry.set_width_chars(150)
                 header_entries[header] = header_entry
-                label_box.pack_start(header_label, False, False, 0)
-                data_box.pack_start(header_entry, False, False, 0)
+                label_box.pack_start(header_label, True, False, 0)
+                data_box.pack_start(header_entry, True, False, 0)
 
             header_box.add(label_box)
             header_box.add(data_box)
