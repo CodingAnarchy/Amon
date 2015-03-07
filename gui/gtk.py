@@ -290,6 +290,7 @@ class Amon(Gtk.Application):
             self.email_window(email=email)
 
     def email_window(self, typ=None, email=None):
+        # Handle case for email having been selected
         if email:
             pprint(email)
             title = email['headers']['Subject'][0]
@@ -336,7 +337,7 @@ class Amon(Gtk.Application):
             toolbar.insert(reply_btn, 0)
             toolbar.insert(forward_btn, 1)
         # Case: replying to selected email
-        elif email is not None and typ is 'Reply':
+        elif email is None or typ == 'Reply' or typ == 'Forward':
             headers = ['To', 'CC', 'BCC', 'Subject']
             label_width = len(max(headers, key=len)) + 5
             label_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
@@ -346,8 +347,10 @@ class Amon(Gtk.Application):
                 header_label.set_markup(('<b>' + header + ':</b>').ljust(label_width, ' '))
                 header_entry = Gtk.Entry()
                 if header == 'Subject':
-                    header_entry.set_text('Re: ' +
-                                          ','.join(email['headers'][header]).replace('\n', ' ').replace('\r', ''))
+                    if typ is not None:
+                        pre = 'Re: ' if typ == 'Reply' else 'Fw: '
+                        header_entry.set_text(pre +
+                                              ','.join(email['headers'][header]).replace('\n', ' ').replace('\r', ''))
                 header_label.set_halign(Gtk.Align.START)
                 header_entry.set_halign(Gtk.Align.START)
                 header_entry.set_width_chars(150)
@@ -371,17 +374,23 @@ class Amon(Gtk.Application):
         webview = WebKit2.WebView()
         if typ in ['Reply', 'Forward']:
             webview.set_editable(True)
-        for sub in email['body'].walk():
-            if not sub.is_multipart():
-                # Required workaround until the binding for load_bytes() is available
-                # requires package only currently released for Ubuntu 15.04 (releases April 23, 2015)
-                if sub.get_content_type() == 'text/html':
-                    webview.load_html(sub.get_payload(decode=True))
-                elif sub.get_content_type() == 'text/plain':
-                    webview.load_plain_text(sub.get_payload(decode=True))
+
+        # Set up email if this isn't a new email
+        if email:
+            for sub in email['body'].walk():
+                if not sub.is_multipart():
+                    # Required workaround until the binding for load_bytes() is available
+                    # requires package only currently released for Ubuntu 15.04 (releases April 23, 2015)
+                    if sub.get_content_type() == 'text/html':
+                        webview.load_html(sub.get_payload(decode=True))
+                    elif sub.get_content_type() == 'text/plain':
+                        webview.load_plain_text(sub.get_payload(decode=True))
         email_scroll.add(webview)
         box.pack_start(email_scroll, True, True, 5)
         email_win.show_all()
+
+    def on_new_email(self, widget, data=None):
+        self.email_window()
 
     def on_reply(self, widget, data):
         self.email_window('Reply', data)
