@@ -79,8 +79,8 @@ def encrypt_msg(msg, to):
         # treat msg as plaintext string
         enc_data = gpg.encrypt(msg, to, always_trust=True)
         enc_str = str(enc_data)
-        if not enc_str.ok:
-            raise Exception("GPG encryption error: \nstatus: " + enc_str.status + '\nstderr: ' + enc_str.stderr)
+        if not enc_data.ok:
+            raise Exception("GPG encryption error: \nstatus: " + enc_data.status + '\nstderr: ' + enc_data.stderr)
     if enc_str is None:
         raise Exception("GPG encryption failed to encrypt a message.")
     return enc_str

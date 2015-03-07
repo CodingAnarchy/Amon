@@ -290,6 +290,9 @@ class Amon(Gtk.Application):
             self.email_window(email=email)
 
     def email_window(self, typ=None, email=None):
+        # Empty defaults
+        textview = None
+        send_btn = None
         # Handle case for email having been selected
         if email:
             pprint(email)
@@ -369,12 +372,12 @@ class Amon(Gtk.Application):
         # Build email display/edit area
         email_scroll = Gtk.ScrolledWindow()
         email_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        webview = WebKit2.WebView()
-        if typ in ['Reply', 'Forward']:
-            webview.set_editable(True)
 
         # Set up email if this isn't a new email
         if email:
+            webview = WebKit2.WebView()
+            if typ in ['Reply', 'Forward']:
+                webview.set_editable(True)
             for sub in email['body'].walk():
                 if not sub.is_multipart():
                     # Required workaround until the binding for load_bytes() is available
@@ -383,8 +386,16 @@ class Amon(Gtk.Application):
                         webview.load_html(sub.get_payload(decode=True))
                     elif sub.get_content_type() == 'text/plain':
                         webview.load_plain_text(sub.get_payload(decode=True))
-        email_scroll.add(webview)
+            email_scroll.add(webview)
+        else:
+            textview = Gtk.TextView()
+            email_scroll.add(textview)
+
         box.pack_start(email_scroll, True, True, 5)
+        if send_btn:
+            buf = textview.get_buffer()
+            send_btn.connect('clicked', self.on_send,
+                             [header_entries, buf, email_win])
         email_win.show_all()
 
     def on_new_email(self, widget, data=None):
@@ -395,6 +406,30 @@ class Amon(Gtk.Application):
 
     def on_forward(self, widget, data):
         self.email_window('Forward', data)
+
+    def on_send(self, widget, data):
+        toaddr = None
+        subject = None
+        for header, entry in data[0].items():
+            if header == 'To':
+                toaddr = entry.get_text()
+            elif header == 'CC':
+                cc = entry.get_text()
+            elif header == 'BCC':
+                bcc = entry.get_text()
+            elif header == 'Subject':
+                subject = entry.get_text()
+            else:
+                raise Exception('Invalid email header ' + header + '!')
+
+        buf = data[1]
+        msg = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+        enc = gpg.encrypt_msg(msg, toaddr)
+        buf.delete(buf.get_start_iter(), buf.get_end_iter())
+        zero_out(msg)
+        # TODO: Implement Subject, CC and BCC fields
+        self.gmail.send_email(toaddr, subject, enc)
+        data[2].destroy()
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()

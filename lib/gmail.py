@@ -5,6 +5,7 @@ import smtplib
 import imaplib
 import email
 import email.header
+from email.mime.text import MIMEText
 import datetime
 import re
 import quopri
@@ -105,8 +106,13 @@ class GmailUser():
         local_conn.login(self.email, pw)
         return local_conn
 
-    def send_email(self, to, msg):
-        self.smtp_server.sendmail(self.email, to, msg)
+    def send_email(self, to, subject, msg):
+        # TODO: Implement Subject, CC and BCC headers
+        msg = MIMEText(msg)
+        msg['Subject'] = subject
+        msg['From'] = self.email
+        msg['To'] = to
+        self.smtp_server.sendmail(self.email, [to], msg.as_string())
 
     def fetch_email(self, uid, folder='Inbox'):
         self.imap.select(folder)

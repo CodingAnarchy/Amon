@@ -1,6 +1,7 @@
 import sys
 from gui.gtk import Amon
 from lib import gpg
+from lib import keybase
 from lib.gmail import GmailUser
 import json
 import logging
@@ -18,8 +19,8 @@ logging.config.dictConfig(conf)
 # keys, csrf = amon.key_fetch(me['private_keys']['primary']['kid'], ['sign'], session)
 
 # Test code for obtaining a user's public key
-# pub_key = amon.user_pub_key('christopherburg')
-# import_result = gpg.import_keys(pub_key)
+pub_key = keybase.user_pub_key('thorodinson')
+import_result = gpg.import_keys(pub_key)
 # pprint(import_result.results)
 
 # print gpg.list_keys(True)
@@ -35,10 +36,6 @@ logging.config.dictConfig(conf)
 # results = amon.user_autocomplete('thor')
 # for u in results:
 #     print u['components']['username']['val']
-
-# print "Sending encrypted email...."
-# gmail.send_email('mtanous22@gmail.com', ['mtanous22@gmail.com', '<redacted>'], enc)
-# print "Email away!"
 
 # them = amon.user_lookup('domain', 'christopherburg.com', 'pictures')
 # pprint(them)
