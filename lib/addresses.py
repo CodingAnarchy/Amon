@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 try:
     address_book = pickle.load(open('address_book.p', 'rb'))
 except IOError:
-    logger.warning('Could not load address book!')
+    logger.debug('Could not load address book!')
     warnings.warn('Could not load address book!')
     address_book = []
 
