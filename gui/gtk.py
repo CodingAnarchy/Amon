@@ -15,6 +15,7 @@ from os import rename
 import thread
 import time
 import threading
+import re
 from pprint import pprint
 
 
@@ -385,7 +386,12 @@ class Amon(Gtk.Application):
                     if sub.get_content_type() == 'text/html':
                         webview.load_html(sub.get_payload(decode=True))
                     elif sub.get_content_type() == 'text/plain':
-                        webview.load_plain_text(sub.get_payload(decode=True))
+                        msg = sub.get_payload(decode=True)
+                        if re.match(r'-----BEGIN PGP MESSAGE-----', msg):
+                            pw = passphrase_dialog(email_win)
+                            msg = gpg.decrypt_msg(msg, pw)
+                            zero_out(pw)
+                        webview.load_plain_text(msg)
             email_scroll.add(webview)
         else:
             textview = Gtk.TextView()
@@ -424,10 +430,9 @@ class Amon(Gtk.Application):
 
         buf = data[1]
         msg = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
-
-        buf.delete(buf.get_start_iter(), buf.get_end_iter())
         # TODO: Implement CC and BCC fields
         self.gmail.send_email(toaddr, subject, msg)
+        buf.delete(buf.get_start_iter(), buf.get_end_iter())
         zero_out(msg)
         data[2].destroy()
 

@@ -28,6 +28,7 @@ def comma_sep_list(lst):
 def build_list(comma_sep):
     lst = comma_sep.split(',')
     lst = [x.strip('_') for x in lst]
+    print "List = " + str(lst)
     return lst
 
 

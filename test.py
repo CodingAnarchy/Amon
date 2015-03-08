@@ -21,9 +21,6 @@ logging.config.dictConfig(conf)
 # Test code for obtaining a user's public key
 pub_key = keybase.user_pub_key('christopherburg')
 gpg.import_keys(pub_key)
-pub_key = keybase.user_pub_key('thorodinson')
-gpg.import_keys(pub_key)
-
 # print gpg.list_keys(True)
 
 # sign = gpg.sign_msg('A simple test of signing a message!')

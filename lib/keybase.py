@@ -11,6 +11,7 @@ import msgpack
 import requests
 import scrypt
 import triplesec
+import gpg
 
 from utils import *
 from error import *
@@ -100,7 +101,7 @@ def decode_priv_key(obj, ts):
     return priv_key
 
 
-# In progress - does not currently work!  Will be necessary for upload of private key to amon (if desired).
+# In progress - does not currently work!  Will be necessary for upload of private key to keybase (if desired).
 # def encode_keys(pub, sec, ts):
 #     # Private keys are encoded on Keybase using P3SKB format and TripleSec
 #     # Have to encode any private keys before uploading them
@@ -249,6 +250,7 @@ class KeybaseUser:
         logger.info(self.status)
         salt, session_id = self.get_salt(user)
         login_url = kb_url + 'login.json'
+        ts = triplesec.TripleSec(str(pw))
         pwh = scrypt.hash(str(pw), unhexlify(salt), 2**15, 8, 1, 224)[192:224]
         zero_out(pw)
         hmac_pwh = hmac.new(pwh, b64decode(session_id), sha512)
@@ -264,7 +266,10 @@ class KeybaseUser:
         self.status_change = True
         logger.info(self.status)
         self.session = Session(data['session'], data['csrf_token'])
-        return data['me']
+        gpg.import_keys(data['me']['public_keys']['primary']['bundle'])
+        if data['me']['private_keys']['primary']['bundle']:
+            priv_key = decode_priv_key(data['me']['private_keys']['primary']['bundle'], ts)
+            gpg.import_keys(priv_key)
 
     def kill_sessions(self):
         logger.info("Ending sessions...")
