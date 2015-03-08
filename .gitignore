@@ -12,6 +12,7 @@
 # Config/Log Files #
 *.conf
 *.log
+*.p
 
 # Backup Files #
 *~
