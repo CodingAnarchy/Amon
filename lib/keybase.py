@@ -220,7 +220,7 @@ class KeybaseUser:
                 else:
                     r = requests.get(kf_url, params={'kids': key_ids, 'ops': opt, 'session': self.session.id})
         else:
-            warn("Generally want to select operations needed for fetched keys to ensure future usability.", RuntimeWarning)
+            warn("Generally want to select operations needed for fetched keys to ensure future usability.", UserWarning)
             if self.session.id is None:
                 warn("Session should be submitted when fetching keys for CSRF verification!", CSRFWarning)
                 r = requests.get(kf_url, params={'kids': key_ids})

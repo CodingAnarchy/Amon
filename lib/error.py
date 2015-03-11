@@ -3,18 +3,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class LoginError(Exception):
+class AddressBookError(Exception):
     def __init__(self, msg):
         logger.error(msg)
         self.msg = msg
-        pass
-
-
-class KeybaseError(Exception):
-    def __init__(self, msg):
-        logger.error(msg)
-        self.msg = msg
-        pass
 
 
 class CSRFError(Exception):
@@ -22,12 +14,20 @@ class CSRFError(Exception):
         self.msg = "CSRF mismatch occurred!\nStored CSRF: " + stored + "\nReturned CSRF: " + ret
         logger.error(self.msg)
 
-    def __str__(self):
-        return self.msg
 
-
-class CSRFWarning(Warning):
+class LoginError(Exception):
     def __init__(self, msg):
         logger.error(msg)
         self.msg = msg
-        pass
+
+
+class KeybaseError(Exception):
+    def __init__(self, msg):
+        logger.error(msg)
+        self.msg = msg
+
+
+class CSRFWarning(RuntimeWarning):
+    def __init__(self, msg):
+        logger.error(msg)
+        self.msg = msg
