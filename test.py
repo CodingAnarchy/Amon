@@ -2,7 +2,7 @@ import sys
 from gui.gtk import Amon
 from lib import gpg
 from lib import keybase
-from lib import addresses
+from lib.addresses import AddressBook
 from lib.gmail import GmailUser
 import json
 import logging
@@ -22,7 +22,10 @@ logging.config.dictConfig(conf)
 # Test code for obtaining a user's public key
 pub_key = keybase.user_pub_key('christopherburg')
 import_result = gpg.import_keys(pub_key)
-addresses.add_contact('Chris Burg', '<redacted>', import_result.fingerprints)
+contacts = AddressBook()
+contacts.add_contact('Chris Burg', '<redacted>', import_result.fingerprints)
+contacts.add_contact('Chris Burg', '<also redacted>', None, primary=False)
+contacts.del_contact('Chris Burg', '<redacted>')
 # print gpg.list_keys(True)
 
 # sign = gpg.sign_msg('A simple test of signing a message!')

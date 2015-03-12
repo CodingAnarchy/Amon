@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class AddressBook:
-    def __init__(self, name=None):
+    def __init__(self, name='primary'):
         self.name = name
 
         try:
@@ -21,18 +21,36 @@ class AddressBook:
             self.contact_list = {}
 
     def add_contact(self, name, email, fingerprint, primary=True):
+        # Make sure name is in contact list to prevent key error
+        if name not in self.contact_list:
+            self.contact_list[name] = {}
+
         if primary:
-            self.contact_list[name]['primary'] = [email, fingerprint]
+            self.contact_list[name]['primary'] = (email, fingerprint)
         else:
-            self.contact_list[name]['alts'].append([email, fingerprint])
+            self.contact_list[name]['alts'].append((email, fingerprint))
         pickle.dump(self.contact_list, open(self.name + '_address_book.p', 'wb'))
 
-    def del_contact(self, name, email):
-        if self.contact_list[name]['primary'][0] == email:
+    def get_contact_key(self, name, primary=True, alt_email=None):
+        if not primary and alt_email is None:
+            raise AddressBookError('Getting a non-primary key fingerprint requires an alternate email.')
+        if primary:
+            key = self.contact_list[name]['primary'][1]
+        else:
+            key = next((v[1] for v in self.contact_list[name]['alts'] if v[0] == alt_email), None)
+
+        if key is None:
+            warnings.warn('Contact not found in address book - returning None.', RuntimeWarning)
+        return key
+
+    def del_contact(self, name, email=None):
+        if email is None:
             del self.contact_list[name]
+        elif self.contact_list[name]['primary'][0] == email:
+            del self.contact_list[name]['primary']
         else:
             try:
-                idx = zip(*self.contact_list[name]['alts'])[0].index(email)
+                idx = next((i for i, v in enumerate(self.contact_list[name]['alts']) if v[0] == email), None)
                 del self.contact_list[name]['alts'][idx]
             except ValueError:
                 raise AddressBookError("Could not find email address to delete!")
