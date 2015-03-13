@@ -8,19 +8,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def comma_sep_list(lst):
+def comma_sep_list(input_lst):
     """Set up string or list to URL list parameter format"""
-    if not isinstance(lst, basestring):
+    if not isinstance(input_lst, basestring):
         # Convert list to proper format for URL parameters
-        if len(lst) > 1:
+        if len(input_lst) > 1:
             try:
-                lst = ','.join(lst)[:-1]
+                lst = ','.join(input_lst)
             except TypeError:
                 raise Exception(inspect.stack()[1][3] + "expects a comma separated string or list object.")
         else:
-            lst = lst[0]
+            lst = input_lst[0]
     # Verify that strings passed in have the appropriate format (comma separated string)
-    elif not match(r'(\w+,)?\w+', lst):
+    elif not match(r'(\w+,)?\w+', input_lst):
         raise Exception("User list not properly formatted: expected list or comma separated string")
     return lst
 
