@@ -28,6 +28,8 @@ class AddressBook:
         if primary:
             self.contact_list[name]['primary'] = (email, fingerprint)
         else:
+            if 'alts' not in self.contact_list[name]:
+                self.contact_list[name]['alts'] = []
             self.contact_list[name]['alts'].append((email, fingerprint))
         pickle.dump(self.contact_list, open(self.name + '_address_book.p', 'wb'))
 
@@ -42,6 +44,16 @@ class AddressBook:
         if key is None:
             warnings.warn('Contact not found in address book - returning None.', RuntimeWarning)
         return key
+
+    def get_contact_email(self, name, primary=True, alt_idx=None):
+        if not primary and alt_idx is None:
+            raise AddressBookError('Getting a non-primary email requires an alternate index.')
+
+        if primary:
+            email = self.contact_list[name]['primary'][0]
+        else:
+            email = self.contact_list[name]['alts'][alt_idx][0]
+        return email
 
     def del_contact(self, name, email=None):
         if email is None:
