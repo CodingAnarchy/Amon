@@ -35,6 +35,9 @@ class AddressBook:
             self.contact_list[name]['alts'].add((email, fingerprint))
         pickle.dump(self.contact_list, open(self.name + '_address_book.p', 'wb'))
 
+    def get_contact_list(self):
+        return self.contact_list
+
     def get_contact_key(self, name, primary=True, alt_email=None):
         if not primary and alt_email is None:
             raise AddressBookError('Getting a non-primary key fingerprint requires an alternate email.')
@@ -67,4 +70,4 @@ class AddressBook:
                 del self.contact_list[name]['alts'][idx]
             except ValueError:
                 raise AddressBookError("Could not find email address to delete!")
-        pickle.dump(self.contact_list, open(self.name + '_address_book.p', 'wb'))
+        pickle.dump(self.contact_list, open(self.name + '_address_book.p', 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
