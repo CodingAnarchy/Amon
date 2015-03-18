@@ -1,6 +1,7 @@
 from lib.version import AMON_VERSION
 from lib.keybase import KeybaseUser
 from lib.gmail import GmailUser
+from lib.addresses import AddressBook
 from lib.keybase import user_pub_key  # For debugging, to fetch default key to clean gpg slate
 from lib.utils import zero_out
 import lib.gpg as gpg
@@ -124,6 +125,7 @@ class Amon(Gtk.Application):
         Gtk.Application.__init__(self, application_id="apps.test.amon")
         self.keybase_user = KeybaseUser()
         self.gmail = GmailUser()
+        self.address_book = AddressBook()
         self.mailbox_list = Gtk.TreeStore(str, str)
         self.mailbox_view = None
         self.mailbox = None
@@ -169,7 +171,7 @@ class Amon(Gtk.Application):
 
         thread.start_new_thread(update_status_bar_thread, ())
 
-        gpg.import_keys(user_pub_key('thorodinson'))  # Debug code to have public key for test
+        # gpg.import_keys(user_pub_key('thorodinson'))  # Debug code to have public key for test
         passphrase = ""
         try:
             with open('amon.conf', 'r') as f:
@@ -203,7 +205,7 @@ class Amon(Gtk.Application):
             if mbox_list[i][0] is not None:
                 iters[mbox_list[i][1]] = self.mailbox_list.append(parent=iters[mbox_list[i][0]], row=mbox_list[i][1:])
             else:
-                iters[mbox_list[i][1]] = self.mailbox_list.append(parent=mbox_list[i][0], row=mbox_list[i][1:])
+                iters[mbox_list[i][1]] = self.mailbox_list.append(parent=None, row=mbox_list[i][1:])
         columns = ['Mailbox', 'Unread']
         for i in range(len(columns)):
             cell = Gtk.CellRendererText()
@@ -435,6 +437,32 @@ class Amon(Gtk.Application):
         buf.delete(buf.get_start_iter(), buf.get_end_iter())
         zero_out(msg)
         data[2].destroy()
+
+    def on_addresses(self, widget):
+        address_win = Gtk.Dialog(parent=self.window, flags=Gtk.DialogFlags.MODAL, title='Address Book')
+        address_win.set_default_size(200, 200)
+        box = address_win.get_content_area()
+        box.set_spacing(5)
+
+        address_list = Gtk.TreeStore(str, str, str)
+        address_view = Gtk.TreeView(model=address_list)
+        addresses = self.address_book.get_contact_list()
+        logger.debug('Addresses: ' + str(addresses))
+
+        for name in addresses:
+            tree_iter = address_list.append(parent=None, row=[name] + list(addresses[name]['primary']))
+            for rec in addresses[name]['alts']:
+                address_list.append(parent=tree_iter, row=[''] + list(rec))
+
+        columns = ['Name', 'Email', 'Key Fingerprint']
+        for i in range(len(columns)):
+            cell = Gtk.CellRendererText()
+            col = Gtk.TreeViewColumn(columns[i], cell, text=i)
+            address_view.append_column(col)
+
+        box.add(address_view)
+        # address_view.get_selection().connect("changed", self.on_address_select)
+        address_win.show_all()
 
     def on_about(self, widget):
         about_dialog = Gtk.AboutDialog()

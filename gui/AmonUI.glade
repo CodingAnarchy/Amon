@@ -171,14 +171,14 @@
             <property name="toolbar_style">both-horiz</property>
             <property name="icon_size">1</property>
             <child>
-              <object class="GtkToolButton" id="Reply">
+              <object class="GtkToolButton" id="Addresses">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="is_important">True</property>
-                <property name="label" translatable="yes">Reply</property>
+                <property name="label" translatable="yes">_Address Book</property>
                 <property name="use_underline">True</property>
-                <property name="stock_id">gtk-go-back</property>
-                <signal name="clicked" handler="on_reply" swapped="no"/>
+                <property name="stock_id">gtk-discard</property>
+                <signal name="clicked" handler="on_addresses" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
