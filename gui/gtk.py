@@ -157,6 +157,7 @@ class Amon(Gtk.Application):
         self.window.paned = builder.get_object("paned1")
         del builder
 
+        self.window.set_title('Amon v' + AMON_VERSION)
         self.window.show_all()
         self.add_window(self.window)
         self.window.connect("destroy", self.on_quit)

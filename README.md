@@ -1,50 +1,24 @@
-# Amon v0.0.1
+# Amon v0.0.2
 
-An interface for Keybase.io and secure email written in Python.
+An interface for secure email written in Python.
 
 Currently in development - being used to familiarize myself with Keybase for future project work.
 
 # Status
-  
-Able to login to keybase and perform basic functionality
-  
-* fetch a user's public key
-* fetch the logged in user's private key and decode it
-* lookup users information on keybase (some issues on keybase side - see keybase-issues [#1341](https://github.com/keybase/keybase-issues/issues/1341)
-* autocomplete API call (could be used for search later)
-* kill user sessions
-* update user profile (must do all fields at once currently)
-* CSRF verification on API calls while logged in
-  
-Able to use GnuPG to do encryption related tasks
-  
-* encrypt and decrypt a message
-* sign a message and verify signatures
-* import and export public and private keys
-* list keys in keyring
-* generate new key for user
-    
-Able to work with Gmail
 
-* send email using Gmail SMTP server (must have Gmail account)
-* fetch email from Gmail using IMAP (currently set to get emails with PGP messages)
-* fetch headers for listing of email
-* fetch mailbox listing with nested mailboxes
+Basic email capability completed!
 
-GUI interface
-
-* menu bar options
-* preferences menu saves preferences to disk in encrypted format
-* mailbox and mail listing (sometimes crashes on SSLError (wrong version?)
+* Can send and view emails (no reply or forward yet)
+* Can view contact list (adding or removing contacts in progress)
+* Email is encrypted
+* Interfaces with Keybase.io and GnuPG
   
 # In Development
 
-* Continued keybase API support (signup in progress)
-* Continued GPG support
-* Support for working with encrypted and plaintext files
-* Email parsing and decrypting support
-* GUI interface (using GTK+3)
-  
+* Reply/Forward emails
+* Add/Remove contacts
+* Add contact key without them using Keybase.io (handle trust mechanism for this)
+
 # Obligatory Reminder
 
 No code in this repository is guaranteed to work and is in great flux as development occurs.
