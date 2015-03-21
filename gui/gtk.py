@@ -495,92 +495,28 @@ class Amon(Gtk.Application):
         vbox = dialog.vbox
         dialog.set_default_response(Gtk.ResponseType.OK)
 
-        listbox = Gtk.ListBox()
-        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        vbox.pack_start(listbox, True, True, 0)
-
-        row = Gtk.ListBoxRow()
-        kb_user = Gtk.HBox()
-        row.add(kb_user)
-        kb_user_entry = Gtk.Entry()
-        kb_user_label = Gtk.Label(label='Keybase Username:')
-        kb_user_label.set_size_request(150, 10)
-        kb_user_label.show()
-        kb_user.pack_start(kb_user_label, False, False, 10)
-        kb_user_entry.set_text(self.config['keybase_user'])
-        kb_user_entry.connect('activate',
-                              lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
-        kb_user_entry.show()
-        kb_user.pack_start(kb_user_entry, False, False, 10)
-        add_help_button(kb_user, "Keybase User ID")
-        kb_user.show()
-        listbox.add(row)
-
-        row = Gtk.ListBoxRow()
-        kb_pw = Gtk.HBox()
-        row.add(kb_pw)
-        kb_pw_entry = Gtk.Entry()
-        kb_pw_entry.set_visibility(False)
-        kb_pw_label = Gtk.Label(label='New Keybase Password:')
-        kb_pw_label.set_size_request(150, 10)
-        kb_pw.pack_start(kb_pw_label, False, False, 10)
-        kb_pw_entry.set_text("")
-        kb_pw_entry.connect('activate',
-                            lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
-        kb_pw.pack_start(kb_pw_entry, False, False, 10)
-        add_help_button(kb_pw, "Enter Keybase Password")
-        listbox.add(row)
-
-        row = Gtk.ListBoxRow()
-        addr = Gtk.HBox()
-        row.add(addr)
-        addr_entry = Gtk.Entry()
-        addr_label = Gtk.Label(label='Email address:')
-        addr_label.set_size_request(150, 10)
-        addr.pack_start(addr_label, False, False, 10)
-        addr_entry.set_text(self.config['email_addr'])
-        addr_entry.connect('activate',
-                           lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
-        addr.pack_start(addr_entry, False, False, 10)
-        add_help_button(addr, "Email address. (Currently only supports Gmail.)")
-        listbox.add(row)
-
-        row = Gtk.ListBoxRow()
-        email_pw = Gtk.HBox()
-        row.add(email_pw)
-        email_pw_entry = Gtk.Entry()
-        email_pw_entry.set_visibility(False)
-        email_pw_label = Gtk.Label(label='New Email Password:')
-        email_pw_label.set_size_request(150, 10)
-        email_pw.pack_start(email_pw_label, False, False, 10)
-        email_pw_entry.set_text("")
-        email_pw_entry.connect('activate',
-                               lambda entry, dialog, response: dialog.response(response), dialog, Gtk.ResponseType.OK)
-        email_pw.pack_start(email_pw_entry, False, False, 10)
-        add_help_button(email_pw, "Enter Email Password")
-        listbox.add(row)
+        self.add_pref(dialog, 'keybase_user', 'Keybase Username:', "Keybase User ID", self.config['keybase_user'])
+        self.add_pref(dialog, 'keybase_pw', 'New Keybase Password:', "Enter Keybase Password", '')
+        self.add_pref(dialog, 'email_addr', 'Email address:',
+                      "Email address. (Currently only supports Gmail.)", self.config['email_addr'])
+        self.add_pref(dialog, 'email_pw', 'New Email Password:', "Enter Email Password", '')
 
         dialog.show_all()
         r = dialog.run()
 
-        keybase_user = kb_user_entry.get_text()
-        keybase_pw = kb_pw_entry.get_text()
-        address = addr_entry.get_text()
-        email_pass = email_pw_entry.get_text()
-        dialog.destroy()
         if r == Gtk.ResponseType.CANCEL:
-            zero_out(keybase_pw)
-            zero_out(email_pass)
+            dialog.destroy()
             return
 
-        if keybase_user != '':
-            self.config['keybase_user'] = keybase_user
-        if keybase_pw != '':
-            self.config['keybase_pw'] = keybase_pw
-        if address != '':
-            self.config['email_addr'] = address
-        if email_pass != '':
-            self.config['email_pw'] = email_pass
+        for pref in vbox.get_children():
+            if type(pref) == 'HBox':
+                name = pref[1].get_name()
+                text = pref[1].get_text()
+                self.config[name] = text
+                if name in ['keybase_pw', 'email_pw']:
+                    zero_out(text)
+
+        dialog.destroy()
 
         with open('amon.conf', 'w+b') as f:
             json.dump(self.config, f)
@@ -589,15 +525,29 @@ class Amon(Gtk.Application):
         rename('enc_msg.gpg', 'amon.conf')
 
         if self.config['keybase_pw'] != '':
-            logger.debug("Logging in user " + self.config['keybase_user'] + " with password " + self.config['keybase_pw'])
+            logger.debug("Logging in user " + self.config['keybase_user'] +
+                         " with password " + self.config['keybase_pw'])
             self.keybase_user.login(self.config['keybase_user'], self.config['keybase_pw'])
 
-        zero_out(keybase_pw)
-        zero_out(email_pass)
-
-        logger.debug("Set keybase user to " + keybase_user)
-        logger.debug("Set email address to " + address)
+        logger.debug("Set keybase user to " + self.config['keybase_user'])
+        logger.debug("Set email address to " + self.config['email_addr'])
         logger.info("Updated preference settings.")
+
+    def add_pref(self, dialog, name, lbl, help_msg, default=None):
+        box = Gtk.HBox()
+        entry = Gtk.Entry()
+        entry.set_name(name)
+        label = Gtk.Label(label=lbl)
+        label.set_size_request(150, 10)
+        label.show()
+        box.pack_start(label, False, False, 10)
+        if default is not None:
+            entry.set_text(default)
+        entry.connect('activate', lambda e, d, r: d.response(r), dialog, Gtk.ResponseType.OK)
+        entry.show()
+        box.pack_start(entry, False, False, 10)
+        add_help_button(box, help_msg)
+        dialog.vbox.pack_start(box, True, True, 0)
 
     def on_close(self, action, parameter):
         action.destroy()
