@@ -1,4 +1,22 @@
 # Compiled Source Files #
 *.pyc
 
+
+# Exported GPG Key Files #
+*.asc
+*.gpg
+
+# Text Files #
+*.txt
+
+# Config/Log Files #
+*.conf
+*.log
+*.p
+
+# Backup Files #
+*~
+*#
+
+# Miscellaneous IDE files #
 .idea
