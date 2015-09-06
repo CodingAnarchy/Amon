@@ -5,8 +5,8 @@ import gnupg
 
 
 # clean GPG test directory on startup before proceeding with test
-system('rm -rf /home/testgpguser/gpghome')
-gpg = gnupg.GPG(gnupghome='/home/testgpguser/gpghome')
+system('rm -rf gpghome')
+gpg = gnupg.GPG(gnupghome='gpghome')
 
 logger = logging.getLogger(__name__)
 
