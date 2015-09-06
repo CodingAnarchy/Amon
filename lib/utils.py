@@ -32,6 +32,7 @@ def build_list(comma_sep):
     return lst
 
 
+# Crashes program in OSX - resolve later
 def zero_out(string):
     temp = "finding offset"
     header = ctypes.string_at(id(temp), sys.getsizeof(temp)).find(temp)

@@ -252,7 +252,7 @@ class KeybaseUser:
         login_url = kb_url + 'login.json'
         ts = triplesec.TripleSec(str(pw))
         pwh = scrypt.hash(str(pw), unhexlify(salt), 2**15, 8, 1, 224)[192:224]
-        zero_out(pw)
+        # zero_out(pw)
         hmac_pwh = hmac.new(pwh, b64decode(session_id), sha512)
         r = requests.post(login_url, data={'email_or_username': user, 'hmac_pwh': hmac_pwh.hexdigest(),
                                            'login_session': session_id})
@@ -267,9 +267,12 @@ class KeybaseUser:
         logger.info(self.status)
         self.session = Session(data['session'], data['csrf_token'])
         gpg.import_keys(data['me']['public_keys']['primary']['bundle'])
-        if data['me']['private_keys']['primary']['bundle']:
+        print data['me']['private_keys']
+        try:
             priv_key = decode_priv_key(data['me']['private_keys']['primary']['bundle'], ts)
             gpg.import_keys(priv_key)
+        except KeyError:
+            pass
 
     def kill_sessions(self):
         logger.info("Ending sessions...")
